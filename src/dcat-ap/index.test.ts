@@ -169,7 +169,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
 
   it('DCAT dataset has defaults when metadata not available', async function () {
     const datasetWithoutMetadata = cloneObject(datasetFromApi);
-    delete datasetWithoutMetadata.attributes.metadata;
+    delete datasetWithoutMetadata.metadata;
 
     const feed = await generateDcatFeed(domainRecord, siteItem, [
       datasetWithoutMetadata,
@@ -207,7 +207,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
 
     // remove props
     for (const mapping of mappings) {
-      deleteProp(partialDataset.attributes, mapping[0]);
+      deleteProp(partialDataset, mapping[0]);
     }
 
     const feed = await generateDcatFeed(domainRecord, siteItem, [

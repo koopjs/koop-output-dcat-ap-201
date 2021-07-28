@@ -26,7 +26,7 @@ export function getDataStreamDcatAp201(options: IDcatAPOptions) {
 
   const formatFn = (chunk) => {
     const dataset = new Dataset(
-      chunk.attributes,
+      chunk,
       portalUrl,
       options.domainRecord.orgTitle,
       options.siteItem.url,
