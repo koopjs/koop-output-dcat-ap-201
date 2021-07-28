@@ -10,7 +10,7 @@ interface IDcatAPOptions {
   env: 'prod'|'qa'|'dev'
 }
 
-export function getDataStreamDcat201(options: IDcatAPOptions) {
+export function getDataStreamDcatAp201(options: IDcatAPOptions) {
   const portalUrl = `https://${options.domainRecord.orgKey}.maps${
     options.env === 'prod' ? '' : options.env
   }.arcgis.com`;

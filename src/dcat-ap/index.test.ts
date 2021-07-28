@@ -6,7 +6,7 @@ import {
   IDomainEntry,
 } from '@esri/hub-common';
 import { readableFromArray, streamToString } from './test-helpers/stream-utils';
-import { getDataStreamDcat201 } from './';
+import { getDataStreamDcatAp201 } from './';
 import * as datasetFromApi from './test-helpers/mock-dataset.json';
 
 function generateDcatFeed(
@@ -15,7 +15,7 @@ function generateDcatFeed(
   datasets,
   env: 'dev' | 'qa' | 'prod' = 'qa',
 ) {
-  const dcatStream = getDataStreamDcat201({ domainRecord, siteItem, env });
+  const dcatStream = getDataStreamDcatAp201({ domainRecord, siteItem, env });
 
   const docStream = readableFromArray(datasets); // no datasets since we're just checking the catalog
 
