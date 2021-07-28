@@ -1,9 +1,19 @@
-import { IItem } from "@esri/arcgis-rest-portal";
-import { cloneObject, deleteProp, getProp, IDomainEntry } from "@esri/hub-common";
+import { IItem } from '@esri/arcgis-rest-portal';
+import {
+  cloneObject,
+  deleteProp,
+  getProp,
+  IDomainEntry,
+} from '@esri/hub-common';
 import { readableFromArray, streamToString } from './stream-utils';
 import { getDataStreamDcat201 } from './';
 
-function generateDcatFeed(domainRecord, siteItem, datasets, env: 'dev'|'qa'|'prod' = 'qa') {
+function generateDcatFeed(
+  domainRecord,
+  siteItem,
+  datasets,
+  env: 'dev' | 'qa' | 'prod' = 'qa',
+) {
   const dcatStream = getDataStreamDcat201({ domainRecord, siteItem, env });
 
   const docStream = readableFromArray(datasets); // no datasets since we're just checking the catalog
@@ -159,155 +169,159 @@ const datasetFromIndex = {
   sort: [0],
 };
 
-it('DCAT catalog formatted correctly', async function () {
-  const feed = await generateDcatFeed(domainRecord, siteItem, []);
+describe('generating DCAT-AP 2.0.1 feed', () => {
+  it('DCAT catalog formatted correctly', async function () {
+    const feed = await generateDcatFeed(domainRecord, siteItem, []);
 
-  expect(feed['@context']).toEqual({
-    dcat: 'http://www.w3.org/ns/dcat#',
-    dct: 'http://purl.org/dc/terms/',
-    foaf: 'http://xmlns.com/foaf/0.1/',
-    vcard: 'http://www.w3.org/2006/vcard/ns#',
-    ftype: 'http://publications.europa.eu/resource/authority/file-type/',
-    lang: 'http://publications.europa.eu/resource/authority/language/',
+    expect(feed['@context']).toEqual({
+      dcat: 'http://www.w3.org/ns/dcat#',
+      dct: 'http://purl.org/dc/terms/',
+      foaf: 'http://xmlns.com/foaf/0.1/',
+      vcard: 'http://www.w3.org/2006/vcard/ns#',
+      ftype: 'http://publications.europa.eu/resource/authority/file-type/',
+      lang: 'http://publications.europa.eu/resource/authority/language/',
+    });
+
+    expect(feed['@id']).toBe(siteItem.url);
+    expect(feed['@type']).toBe('dcat:Catalog');
+    expect(feed['dct:description']).toBe(siteItem.description);
+    expect(feed['dct:title']).toBe(siteItem.title);
+    expect(feed['dct:publisher']).toBe(domainRecord.orgTitle);
+    expect(feed['foaf:homepage']).toEqual({
+      'foaf:Document': `${siteItem.url}/search`,
+    });
+    expect(feed['dct:language']).toEqual({
+      '@id': 'lang:BAK',
+    });
+    expect(feed['dct:creator']).toEqual({
+      '@id': 'https://qa-pre-a-hub.mapsqa.arcgis.com',
+      '@type': 'foaf:Agent',
+      'foaf:name': domainRecord.orgTitle,
+    });
+    expect(Array.isArray(feed['dcat:dataset'])).toBeTruthy();
+    expect(feed['dcat:dataset'].length).toBe(0);
   });
 
-  expect(feed['@id']).toBe(siteItem.url);
-  expect(feed['@type']).toBe('dcat:Catalog');
-  expect(feed['dct:description']).toBe(siteItem.description);
-  expect(feed['dct:title']).toBe(siteItem.title);
-  expect(feed['dct:publisher']).toBe(domainRecord.orgTitle);
-  expect(feed['foaf:homepage']).toEqual({
-    'foaf:Document': `${siteItem.url}/search`,
+  it('DCAT dataset prefers metadata when available', async function () {
+    const feed = await generateDcatFeed(domainRecord, siteItem, [
+      datasetFromIndex,
+    ]);
+
+    const chk1 = feed['dcat:dataset'][0];
+
+    expect(chk1['dcat:keyword']).toEqual([
+      'Test',
+      'INSPIRE',
+      'Administrative and social governmental services',
+      'US',
+      'firestations',
+      'demo',
+    ]);
+
+    expect(chk1['dct:provenance']).toBe(
+      'Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)',
+    );
+
+    expect(chk1['dct:issued']).toBe('2021-04-19T13:30:24.055-04:00');
+
+    expect(chk1['dct:language']).toEqual({
+      '@id': 'lang:GER',
+    });
   });
-  expect(feed['dct:language']).toEqual({
-    '@id': 'lang:BAK',
+
+  it('DCAT dataset has defaults when metadata not available', async function () {
+    const datasetWithoutMetadata = cloneObject(datasetFromIndex);
+    delete datasetWithoutMetadata._source.metadata;
+
+    const feed = await generateDcatFeed(domainRecord, siteItem, [
+      datasetWithoutMetadata,
+    ]);
+
+    const chk1 = feed['dcat:dataset'][0];
+
+    expect(chk1['dcat:keyword']).toEqual([
+      'property',
+      'vacant',
+      'abandoned',
+      'revitalization',
+    ]);
+
+    expect(chk1['dct:provenance']).toBe(null);
+
+    expect(chk1['dct:issued']).toBe('2017-06-29T21:29:03.000Z');
+
+    expect(chk1['dct:language']).toEqual({
+      '@id': 'lang:ENG',
+    });
   });
-  expect(feed['dct:creator']).toEqual({
-    '@id': 'https://qa-pre-a-hub.mapsqa.arcgis.com',
-    '@type': 'foaf:Agent',
-    'foaf:name': domainRecord.orgTitle,
+
+  it('DCAT dataset attributes default to null where values not available', async function () {
+    // define a few mappings to check
+    const mappings = [
+      [
+        'org.portalProperties.links.contactUs.url',
+        'dcat:contactPoint.vcard:hasEmail',
+      ],
+      ['metadata.metadata.dataIdInfo.idCredit', 'dct:provenance'],
+      ['item.title', 'dct:title'],
+    ];
+
+    const partialDataset = cloneObject(datasetFromIndex);
+
+    // remove props
+    for (const mapping of mappings) {
+      deleteProp(partialDataset._source, mapping[0]);
+    }
+
+    const feed = await generateDcatFeed(domainRecord, siteItem, [
+      partialDataset,
+    ]);
+
+    const dcatDataset = feed['dcat:dataset'][0];
+
+    for (const mapping of mappings) {
+      expect(getProp(dcatDataset, mapping[1])).toBe(null);
+    }
   });
-  expect(Array.isArray(feed['dcat:dataset'])).toBeTruthy();
-  expect(feed['dcat:dataset'].length).toBe(0);
-});
 
-it('DCAT dataset prefers metadata when available', async function () {
-  const feed = await generateDcatFeed(domainRecord, siteItem, [
-    datasetFromIndex,
-  ]);
+  it('DCAT feed responds to AGO environment', async function () {
+    const feedDev = await generateDcatFeed(
+      domainRecord,
+      siteItem,
+      [datasetFromIndex],
+      'dev',
+    );
+    expect(feedDev['dct:creator']['@id']).toBe(
+      'https://qa-pre-a-hub.mapsdev.arcgis.com',
+    );
+    expect(
+      new URL(feedDev['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
+    ).toBe('qa-pre-a-hub.mapsdev.arcgis.com');
 
-  const chk1 = feed['dcat:dataset'][0];
+    const feedQa = await generateDcatFeed(
+      domainRecord,
+      siteItem,
+      [datasetFromIndex],
+      'qa',
+    );
+    expect(feedQa['dct:creator']['@id']).toBe(
+      'https://qa-pre-a-hub.mapsqa.arcgis.com',
+    );
+    expect(
+      new URL(feedQa['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
+    ).toBe('qa-pre-a-hub.mapsqa.arcgis.com');
 
-  expect(chk1['dcat:keyword']).toEqual([
-    'Test',
-    'INSPIRE',
-    'Administrative and social governmental services',
-    'US',
-    'firestations',
-    'demo',
-  ]);
-
-  expect(chk1['dct:provenance']).toBe(
-    'Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)',
-  );
-
-  expect(chk1['dct:issued']).toBe('2021-04-19T13:30:24.055-04:00');
-
-  expect(chk1['dct:language']).toEqual({
-    '@id': 'lang:GER',
+    const feedProd = await generateDcatFeed(
+      domainRecord,
+      siteItem,
+      [datasetFromIndex],
+      'prod',
+    );
+    expect(feedProd['dct:creator']['@id']).toBe(
+      'https://qa-pre-a-hub.maps.arcgis.com',
+    );
+    expect(
+      new URL(feedProd['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
+    ).toBe('qa-pre-a-hub.maps.arcgis.com');
   });
-});
-
-it('DCAT dataset has defaults when metadata not available', async function () {
-  const datasetWithoutMetadata = cloneObject(datasetFromIndex);
-  delete datasetWithoutMetadata._source.metadata;
-
-  const feed = await generateDcatFeed(domainRecord, siteItem, [
-    datasetWithoutMetadata,
-  ]);
-
-  const chk1 = feed['dcat:dataset'][0];
-
-  expect(chk1['dcat:keyword']).toEqual([
-    'property',
-    'vacant',
-    'abandoned',
-    'revitalization',
-  ]);
-
-  expect(chk1['dct:provenance']).toBe(null);
-
-  expect(chk1['dct:issued']).toBe('2017-06-29T21:29:03.000Z');
-
-  expect(chk1['dct:language']).toEqual({
-    '@id': 'lang:ENG',
-  });
-});
-
-it('DCAT dataset attributes default to null where values not available', async function () {
-  // define a few mappings to check
-  const mappings = [
-    [
-      'org.portalProperties.links.contactUs.url',
-      'dcat:contactPoint.vcard:hasEmail',
-    ],
-    ['metadata.metadata.dataIdInfo.idCredit', 'dct:provenance'],
-    ['item.title', 'dct:title'],
-  ];
-
-  const partialDataset = cloneObject(datasetFromIndex);
-
-  // remove props
-  for (const mapping of mappings) {
-    deleteProp(partialDataset._source, mapping[0]);
-  }
-
-  const feed = await generateDcatFeed(domainRecord, siteItem, [partialDataset]);
-
-  const dcatDataset = feed['dcat:dataset'][0];
-
-  for (const mapping of mappings) {
-    expect(getProp(dcatDataset, mapping[1])).toBe(null);
-  }
-});
-
-it('DCAT feed responds to AGO environment', async function () {
-  const feedDev = await generateDcatFeed(
-    domainRecord,
-    siteItem,
-    [datasetFromIndex],
-    'dev',
-  );
-  expect(feedDev['dct:creator']['@id']).toBe(
-    'https://qa-pre-a-hub.mapsdev.arcgis.com',
-  );
-  expect(
-    new URL(feedDev['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-  ).toBe('qa-pre-a-hub.mapsdev.arcgis.com');
-
-  const feedQa = await generateDcatFeed(
-    domainRecord,
-    siteItem,
-    [datasetFromIndex],
-    'qa',
-  );
-  expect(feedQa['dct:creator']['@id']).toBe(
-    'https://qa-pre-a-hub.mapsqa.arcgis.com',
-  );
-  expect(
-    new URL(feedQa['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-  ).toBe('qa-pre-a-hub.mapsqa.arcgis.com');
-
-  const feedProd = await generateDcatFeed(
-    domainRecord,
-    siteItem,
-    [datasetFromIndex],
-    'prod',
-  );
-  expect(feedProd['dct:creator']['@id']).toBe(
-    'https://qa-pre-a-hub.maps.arcgis.com',
-  );
-  expect(
-    new URL(feedProd['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-  ).toBe('qa-pre-a-hub.maps.arcgis.com');
 });

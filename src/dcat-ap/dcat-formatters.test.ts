@@ -223,4 +223,4 @@ describe('formatDcatDataset', () => {
     expect(dist).toBeTruthy();
     expect(dist).toBe('OGC WMS');
   });
-})
+});
