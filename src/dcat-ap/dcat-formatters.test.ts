@@ -42,7 +42,7 @@ describe('formatDcatDataset', () => {
         '@id': `lang:${dataset.language.toUpperCase()}`,
       },
       'dcat:keyword': dataset.keyword,
-      'dct:provenance': dataset.metaProvenance,
+      'dct:provenance': dataset.provenance,
       'dct:issued': dataset.issuedDateTime,
     };
     const result = JSON.parse(formatDcatDataset(dataset));

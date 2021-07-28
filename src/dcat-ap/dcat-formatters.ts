@@ -32,7 +32,7 @@ export function formatDcatDataset(dataset: DcatDataset) {
     'dct:identifier': dataset.landingPage,
     'dct:language': null,
     'dcat:keyword': dataset.keyword,
-    'dct:provenance': dataset.metaProvenance, // won't be available if not INSPIRE metadata
+    'dct:provenance': dataset.provenance, // won't be available if not INSPIRE metadata
     'dct:issued': dataset.issuedDateTime,
     'dcat:distribution': generateDistributions(dataset),
   };

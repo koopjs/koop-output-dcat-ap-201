@@ -5,8 +5,9 @@ import {
   getProp,
   IDomainEntry,
 } from '@esri/hub-common';
-import { readableFromArray, streamToString } from './stream-utils';
+import { readableFromArray, streamToString } from './test-helpers/stream-utils';
 import { getDataStreamDcat201 } from './';
+import * as datasetFromApi from './test-helpers/mock-dataset.json';
 
 function generateDcatFeed(
   domainRecord,
@@ -108,67 +109,6 @@ const siteItem: IItem = {
   contentOrigin: 'self',
 };
 
-const datasetFromIndex = {
-  _index: 'hub_qa_1625330584726',
-  _type: '_doc',
-  _id: 'cf479076dc0f4eaaa775fb3e03581f73_0',
-  _score: null,
-  _source: {
-    server: { supportedExtensions: '' },
-    item: {
-      owner: 'cityofx_adminqa',
-      created: 1498771743000,
-      culture: 'en-us',
-      description: null,
-      title: 'Abandoned Property Parcels',
-      tags: ['property', 'vacant', 'abandoned', 'revitalization'],
-    },
-    default: {
-      id: 'cf479076dc0f4eaaa775fb3e03581f73_0',
-      url: 'https://gis.southbendin.gov/arcgis/rest/services/OpenData/VacantAbandoned/MapServer/0',
-    },
-    metadata: {
-      metadata: {
-        dataIdInfo: {
-          searchKeys: {
-            keyword: [
-              'Test',
-              'INSPIRE',
-              'Administrative and social governmental services',
-              'US',
-              'firestations',
-              'demo',
-            ],
-          },
-          dataLang: {
-            languageCode: {
-              '@_value': 'ger',
-            },
-          },
-          idCredit:
-            'Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)',
-          idCitation: {
-            date: {
-              pubDate: '2021-04-19T13:30:24.055-04:00',
-            },
-          },
-        },
-      },
-    },
-    org: {
-      portalProperties: {
-        links: {
-          contactUs: {
-            url: 'mailto:info@foobar.com',
-          },
-        },
-      },
-    },
-    layer: { geometryType: 'esriGeometryPolygon' },
-  },
-  sort: [0],
-};
-
 describe('generating DCAT-AP 2.0.1 feed', () => {
   it('DCAT catalog formatted correctly', async function () {
     const feed = await generateDcatFeed(domainRecord, siteItem, []);
@@ -204,18 +144,16 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
 
   it('DCAT dataset prefers metadata when available', async function () {
     const feed = await generateDcatFeed(domainRecord, siteItem, [
-      datasetFromIndex,
+      datasetFromApi,
     ]);
 
     const chk1 = feed['dcat:dataset'][0];
 
     expect(chk1['dcat:keyword']).toEqual([
-      'Test',
-      'INSPIRE',
-      'Administrative and social governmental services',
-      'US',
-      'firestations',
-      'demo',
+      'some',
+      'keywords',
+      'from',
+      'metadata'
     ]);
 
     expect(chk1['dct:provenance']).toBe(
@@ -230,8 +168,8 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
   });
 
   it('DCAT dataset has defaults when metadata not available', async function () {
-    const datasetWithoutMetadata = cloneObject(datasetFromIndex);
-    delete datasetWithoutMetadata._source.metadata;
+    const datasetWithoutMetadata = cloneObject(datasetFromApi);
+    delete datasetWithoutMetadata.attributes.metadata;
 
     const feed = await generateDcatFeed(domainRecord, siteItem, [
       datasetWithoutMetadata,
@@ -240,15 +178,13 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const chk1 = feed['dcat:dataset'][0];
 
     expect(chk1['dcat:keyword']).toEqual([
-      'property',
-      'vacant',
-      'abandoned',
-      'revitalization',
+      'Data collection',
+      'just modified'
     ]);
 
     expect(chk1['dct:provenance']).toBe(null);
 
-    expect(chk1['dct:issued']).toBe('2017-06-29T21:29:03.000Z');
+    expect(chk1['dct:issued']).toBe('2021-01-29T15:34:38.000Z');
 
     expect(chk1['dct:language']).toEqual({
       '@id': 'lang:ENG',
@@ -258,19 +194,20 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
   it('DCAT dataset attributes default to null where values not available', async function () {
     // define a few mappings to check
     const mappings = [
-      [
-        'org.portalProperties.links.contactUs.url',
-        'dcat:contactPoint.vcard:hasEmail',
-      ],
+      // TODO - reactivate when org contact is available
+      // [
+      //   'org.portalProperties.links.contactUs.url',
+      //   'dcat:contactPoint.vcard:hasEmail',
+      // ],
       ['metadata.metadata.dataIdInfo.idCredit', 'dct:provenance'],
-      ['item.title', 'dct:title'],
+      ['name', 'dct:title'],
     ];
 
-    const partialDataset = cloneObject(datasetFromIndex);
+    const partialDataset = cloneObject(datasetFromApi);
 
     // remove props
     for (const mapping of mappings) {
-      deleteProp(partialDataset._source, mapping[0]);
+      deleteProp(partialDataset.attributes, mapping[0]);
     }
 
     const feed = await generateDcatFeed(domainRecord, siteItem, [
@@ -288,7 +225,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const feedDev = await generateDcatFeed(
       domainRecord,
       siteItem,
-      [datasetFromIndex],
+      [datasetFromApi],
       'dev',
     );
     expect(feedDev['dct:creator']['@id']).toBe(
@@ -301,7 +238,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const feedQa = await generateDcatFeed(
       domainRecord,
       siteItem,
-      [datasetFromIndex],
+      [datasetFromApi],
       'qa',
     );
     expect(feedQa['dct:creator']['@id']).toBe(
@@ -314,7 +251,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const feedProd = await generateDcatFeed(
       domainRecord,
       siteItem,
-      [datasetFromIndex],
+      [datasetFromApi],
       'prod',
     );
     expect(feedProd['dct:creator']['@id']).toBe(

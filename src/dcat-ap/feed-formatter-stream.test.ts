@@ -1,4 +1,4 @@
-const { readableFromArray, streamToString } = require('./stream-utils');
+import { readableFromArray, streamToString } from './test-helpers/stream-utils';
 import { FeedFormatterStream } from './feed-formatter-stream';
 
 it('Feed Formatter Stream: just header and footer when no contents', async function () {
