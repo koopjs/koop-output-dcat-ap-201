@@ -1,15 +1,13 @@
 import { Transform, TransformCallback } from 'stream';
 
-type FormatChunkFn = (chunk: any) => string
-
 export class FeedFormatterStream extends Transform {
   private _headerAdded: boolean;
   private _header: string;
   private _footer: string;
   private _delineator: string;
-  private _formatChunk: FormatChunkFn;
+  private _formatChunk: any;
 
-  constructor (header: string, footer: string, delineator: string, formatChunk: FormatChunkFn) {
+  constructor (header: string, footer: string, delineator: string, formatChunk: any) {
     super({ objectMode: true });
     this._headerAdded = false;
     this._header = header;
