@@ -24,7 +24,7 @@ export class DcatDataset {
   private _orgTitle: string;
   private _siteUrl: string;
 
-  constructor (dto, portalUrl, orgTitle, siteUrl) {
+  constructor (dto: any, portalUrl: string, orgTitle: string, siteUrl: string) {
     this._dto = dto;
     this._portalUrl = portalUrl;
     this._orgTitle = orgTitle;
