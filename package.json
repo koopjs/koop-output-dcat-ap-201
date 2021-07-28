@@ -44,6 +44,13 @@
   "author": "Andrew Tate <atate@esri.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@esri/arcgis-rest-auth": "^3.2.1",
+    "@esri/arcgis-rest-portal": "^3.2.1",
+    "@esri/arcgis-rest-request": "^3.2.1",
+    "@esri/hub-common": "^8.13.2",
+    "@esri/hub-initiatives": "^8.13.2",
+    "@esri/hub-sites": "^8.13.2",
+    "@esri/hub-teams": "^8.13.2",
     "@types/lodash": "^4.14.171",
     "lodash": "^4.17.21",
     "tslib": "~2.3.0"

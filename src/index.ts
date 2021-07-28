@@ -14,4 +14,4 @@ export = class Output {
     // async serve (req, res) {
 
     // }
-  }
+}
