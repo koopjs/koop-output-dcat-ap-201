@@ -110,8 +110,8 @@ Run the `npm t` commmand to spin up the automated tests.
 [ts-badge]: https://img.shields.io/badge/TypeScript-4.3-blue.svg
 [nodejs-badge]: https://img.shields.io/badge/Node.js->=%2014.16-blue.svg
 [nodejs]: https://nodejs.org/dist/latest-v14.x/docs/api/
-[gha-badge]: https://github.com/jsynowiec/node-typescript-boilerplate/actions/workflows/nodejs.yml/badge.svg
-[gha-ci]: https://github.com/jsynowiec/node-typescript-boilerplate/actions/workflows/nodejs.yml
+[gha-badge]: https://github.com/koopjs/koop-output-dcat-ap-201/actions/workflows/nodejs.yml/badge.svg
+[gha-ci]: https://github.com/koopjs/koop-output-dcat-ap-201/actions/workflows/nodejs.yml
 [typescript]: https://www.typescriptlang.org/
 [typescript-4-3]: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-3.html
 [license-badge]: https://img.shields.io/badge/license-APLv2-blue.svg
