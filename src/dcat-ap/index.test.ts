@@ -5,17 +5,17 @@ import {
   getProp,
   IDomainEntry,
 } from '@esri/hub-common';
-import { readableFromArray, streamToString } from './test-helpers/stream-utils';
-import { getDataStreamDcat201 } from './';
-import * as datasetFromApi from './test-helpers/mock-dataset.json';
+import { readableFromArray, streamToString } from '../test-helpers/stream-utils';
+import { getDataStreamDcatAp201 } from './';
+import * as datasetFromApi from '../test-helpers/mock-dataset.json';
 
 function generateDcatFeed(
   domainRecord,
   siteItem,
   datasets,
-  env: 'dev' | 'qa' | 'prod' = 'qa',
+  orgBaseUrl = 'https://qa-pre-a-hub.mapsqa.arcgis.com'
 ) {
-  const dcatStream = getDataStreamDcat201({ domainRecord, siteItem, env });
+  const dcatStream = getDataStreamDcatAp201({ domainRecord, siteItem, orgBaseUrl });
 
   const docStream = readableFromArray(datasets); // no datasets since we're just checking the catalog
 
@@ -169,7 +169,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
 
   it('DCAT dataset has defaults when metadata not available', async function () {
     const datasetWithoutMetadata = cloneObject(datasetFromApi);
-    delete datasetWithoutMetadata.attributes.metadata;
+    delete datasetWithoutMetadata.metadata;
 
     const feed = await generateDcatFeed(domainRecord, siteItem, [
       datasetWithoutMetadata,
@@ -207,7 +207,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
 
     // remove props
     for (const mapping of mappings) {
-      deleteProp(partialDataset.attributes, mapping[0]);
+      deleteProp(partialDataset, mapping[0]);
     }
 
     const feed = await generateDcatFeed(domainRecord, siteItem, [
@@ -221,44 +221,18 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     }
   });
 
-  it('DCAT feed responds to AGO environment', async function () {
-    const feedDev = await generateDcatFeed(
-      domainRecord,
-      siteItem,
-      [datasetFromApi],
-      'dev',
-    );
-    expect(feedDev['dct:creator']['@id']).toBe(
-      'https://qa-pre-a-hub.mapsdev.arcgis.com',
-    );
-    expect(
-      new URL(feedDev['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-    ).toBe('qa-pre-a-hub.mapsdev.arcgis.com');
-
-    const feedQa = await generateDcatFeed(
-      domainRecord,
-      siteItem,
-      [datasetFromApi],
-      'qa',
-    );
-    expect(feedQa['dct:creator']['@id']).toBe(
-      'https://qa-pre-a-hub.mapsqa.arcgis.com',
-    );
-    expect(
-      new URL(feedQa['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-    ).toBe('qa-pre-a-hub.mapsqa.arcgis.com');
-
+  it('DCAT feed uses org base URL', async function () {
     const feedProd = await generateDcatFeed(
       domainRecord,
       siteItem,
       [datasetFromApi],
-      'prod',
+      'https://qa-pre-a-hub.mapsdev.arcgis.com',
     );
     expect(feedProd['dct:creator']['@id']).toBe(
-      'https://qa-pre-a-hub.maps.arcgis.com',
+      'https://qa-pre-a-hub.mapsdev.arcgis.com',
     );
     expect(
       new URL(feedProd['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-    ).toBe('qa-pre-a-hub.maps.arcgis.com');
+    ).toBe('qa-pre-a-hub.mapsdev.arcgis.com');
   });
 });

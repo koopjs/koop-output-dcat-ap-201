@@ -1,15 +1,15 @@
 import { cloneObject } from '@esri/hub-common';
 import { DcatDataset } from './dcat-dataset';
 
-import * as datasetFromApi from './test-helpers/mock-dataset.json';
+import * as datasetFromApi from '../test-helpers/mock-dataset.json';
 
 const siteUrl = 'https://foobar.hub.arcgis.com'
 const orgTitle = 'My Fun Org'
-const portalUrl = 'https://my-fun-org.maps.arcgis.com'
+const orgBaseUrl = 'https://my-fun-org.maps.arcgis.com'
 
 describe('DcatDataset', () => {
   it('Dataset props come from right places', function() {
-    const dataset = new DcatDataset(datasetFromApi.attributes, portalUrl, orgTitle, siteUrl)
+    const dataset = new DcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
 
     expect(dataset.id).toBe('f4bcc1035b7d46cba95e977f4affb6be_0')
     expect(dataset.url).toBe(
@@ -42,9 +42,9 @@ describe('DcatDataset', () => {
 
   it('non-metadata fallbacks', function() {
     const noMetadata = cloneObject(datasetFromApi)
-    delete noMetadata.attributes.metadata
+    delete noMetadata.metadata
 
-    const dataset = new DcatDataset(noMetadata.attributes, portalUrl, orgTitle, siteUrl)
+    const dataset = new DcatDataset(noMetadata, orgBaseUrl, orgTitle, siteUrl)
 
     expect(dataset.language).toBe('eng')
     expect(dataset.keyword).toEqual(['Data collection', 'just modified'])
@@ -53,19 +53,19 @@ describe('DcatDataset', () => {
 
   it('Hub Page has default keyword when has no tags', function() {
     const pageDataset = cloneObject(datasetFromApi)
-    delete pageDataset.attributes.metadata
-    pageDataset.attributes.type = 'Hub Page';
+    delete pageDataset.metadata
+    pageDataset.type = 'Hub Page';
 
     const expectedKeywords = ['ArcGIS Hub page'];
 
     expect(
-      new DcatDataset({ ...pageDataset.attributes, tags: undefined }, portalUrl, orgTitle, siteUrl).keyword
+      new DcatDataset({ ...pageDataset, tags: undefined }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
     expect(
-      new DcatDataset({ ...pageDataset.attributes, tags: [] }, portalUrl, orgTitle, siteUrl).keyword
+      new DcatDataset({ ...pageDataset, tags: [] }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
     expect(
-      new DcatDataset({ ...pageDataset.attributes, tags: [''] }, portalUrl, orgTitle, siteUrl).keyword
+      new DcatDataset({ ...pageDataset, tags: [''] }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
   })
 
@@ -73,15 +73,15 @@ describe('DcatDataset', () => {
     const noSR = cloneObject(datasetFromApi)
     const withSR = cloneObject(datasetFromApi)
 
-    delete noSR.attributes.server.spatialReference;
+    delete noSR.server.spatialReference;
 
-    withSR.attributes.server.spatialReference = {
+    withSR.server.spatialReference = {
       wkid: 4325,
       latestWkid: 8374
     }
 
-    const datasetNoSR = new DcatDataset(noSR.attributes, portalUrl, orgTitle, siteUrl)
-    const datasetSR = new DcatDataset(withSR.attributes, portalUrl, orgTitle, siteUrl)
+    const datasetNoSR = new DcatDataset(noSR, orgBaseUrl, orgTitle, siteUrl)
+    const datasetSR = new DcatDataset(withSR, orgBaseUrl, orgTitle, siteUrl)
 
     expect(datasetNoSR.getDownloadUrl('geojson')).toBe(
       'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0.geojson'
@@ -92,7 +92,7 @@ describe('DcatDataset', () => {
   })
 
   it('getOgcUrl', function() {
-    const dataset = new DcatDataset(datasetFromApi.attributes, portalUrl, orgTitle, siteUrl)
+    const dataset = new DcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
 
     expect(dataset.getOgcUrl()).toBe(
       'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/services/Tahoe_Things/FeatureServer/WMSServer?request=GetCapabilities&service=WMS'
@@ -107,11 +107,11 @@ describe('DcatDataset', () => {
     const supportsWFS = cloneObject(datasetFromApi)
     const supportsWMS = cloneObject(datasetFromApi)
 
-    // supportsWFS.attributes.server.supportedExtensions = 'WFSServer'
-    // supportsWMS.attributes.server.supportedExtensions = 'WMSServer'
+    // supportsWFS.server.supportedExtensions = 'WFSServer'
+    // supportsWMS.server.supportedExtensions = 'WMSServer'
 
-    const datasetWFS = new DcatDataset(supportsWFS.attributes, portalUrl, orgTitle, siteUrl)
-    const datasetWMS = new DcatDataset(supportsWMS.attributes, portalUrl, orgTitle, siteUrl)
+    const datasetWFS = new DcatDataset(supportsWFS, orgBaseUrl, orgTitle, siteUrl)
+    const datasetWMS = new DcatDataset(supportsWMS, orgBaseUrl, orgTitle, siteUrl)
 
     expect(datasetWFS.supportsWFS).toBeTruthy()
     expect(datasetWFS.supportsWMS).toBeFalsy()

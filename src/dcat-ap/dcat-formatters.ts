@@ -49,13 +49,13 @@ export function formatDcatDataset(dataset: DcatDataset) {
 export interface ICatalogOptions {
   siteItem: IItem,
   domainRecord: IDomainEntry,
-  portalUrl: string
+  orgBaseUrl: string
 }
 
 /**
  * Formats a "dcat:Catalog"
  */
-export function formatDcatCatalog({ siteItem, domainRecord, portalUrl }: ICatalogOptions) {
+export function formatDcatCatalog({ siteItem, domainRecord, orgBaseUrl }: ICatalogOptions) {
   const catalog = {
     '@context': {
       dcat: 'http://www.w3.org/ns/dcat#',
@@ -77,7 +77,7 @@ export function formatDcatCatalog({ siteItem, domainRecord, portalUrl }: ICatalo
       '@id': `lang:${localeToLang(siteItem.culture).toUpperCase()}`,
     },
     'dct:creator': {
-      '@id': portalUrl,
+      '@id': orgBaseUrl,
       '@type': 'foaf:Agent',
       'foaf:name': domainRecord.orgTitle,
     },

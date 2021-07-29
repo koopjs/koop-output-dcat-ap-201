@@ -1,0 +1,15 @@
+{
+  "id": "374730",
+  "hostname": "download-test-qa-pre-a-hub.hubqa.arcgis.com",
+  "siteId": "6250d80d445740cc83e03a15d72229b5",
+  "clientKey": "lynU5vV3hIra11jA",
+  "orgKey": "qa-pre-a-hub",
+  "siteTitle": "download Sidebar",
+  "orgId": "Xj56SBi2udA78cC9",
+  "orgTitle": "QA Premium Alpha Hub",
+  "createdAt": "2021-02-12T00:23:44.798Z",
+  "updatedAt": "2021-02-26T16:16:13.300Z",
+  "sslOnly": true,
+  "permanentRedirect": false,
+  "domain": "download-test-qa-pre-a-hub.hubqa.arcgis.com"
+}
