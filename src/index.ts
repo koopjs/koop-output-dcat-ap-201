@@ -29,58 +29,72 @@ export = class Output {
   public async serve (req: Request, res: Response) {
     res.set('Content-Type', 'application/json');
 
-    const portalUrl = config.has('arcgisPortal')
-      ? config.get('arcgisPortal') as string
-      : 'https://www.arcgis.com';
-
-    const requestOptions: IHubRequestOptions = {
-      isPortal: false,
-      hubApiUrl: getHubApiUrl(portalUrl),
-      portal: getPortalApiUrl(portalUrl),
-      authentication: null,
-    };
-
     try {
-      const domainRecord = (await lookupDomain(
-        req.hostname,
-        requestOptions,
-      )) as IDomainEntry;
-      const siteModel = await getSiteById(domainRecord.siteId, requestOptions);
+      const { domainRecord, siteModel } = await this.fetchDomainAndSite(req.hostname);
 
-      if (!_.has(siteModel, 'data.catalog')) {
+      const siteCatalog = _.get(siteModel, 'data.catalog');
+      if (!siteCatalog) {
         res.status(200).send({});
-        return;
-      }
-
-      const dcatStream = getDataStreamDcatAp201({
+      } else {
+       const dcatStream = getDataStreamDcatAp201({
         domainRecord,
         siteItem: siteModel.item,
-        env: this.getEnvFromPortal(portalUrl),
+        env: this.getEnvFromPortal(this.portalUrl),
       });
 
-      const searchRequest: IContentSearchRequest = {
-        filter: {
-          group: _.get(siteModel, 'data.catalog.groups'),
-          orgid: _.get(siteModel, 'data.catalog.orgId'),
-        },
-        options: {
-          portal: portalUrl
-        }
-      };
-
-      req.res.locals.searchRequest = searchRequest;
+      req.res.locals.searchRequest = this.getSearchRequestFromCatalog(siteCatalog, this.portalUrl);
 
       const datasetStream = await this.model.pullStream(req);
 
       datasetStream
         .pipe(dcatStream)
         .pipe(res)
-        .on('error', (err) => {
+        .on('error', (err: any) => {
           res.status(500).send(this.getErrorResponse(err));
         });
+      }
     } catch (err) {
       res.status(500).send(this.getErrorResponse(err));
     }
+  }
+
+  private async fetchDomainAndSite (hostname) {
+    const requestOptions = this.getRequestOptions(this.portalUrl);
+
+    const domainRecord = (await lookupDomain(
+      hostname,
+      requestOptions,
+    )) as IDomainEntry;
+    const siteModel = await getSiteById(domainRecord.siteId, requestOptions);
+
+    return { domainRecord, siteModel };
+  }
+
+  private getRequestOptions (portalUrl: string): IHubRequestOptions {
+    return {
+      isPortal: false,
+      hubApiUrl: getHubApiUrl(portalUrl),
+      portal: getPortalApiUrl(portalUrl),
+      authentication: null,
+    };
+  }
+
+  private get portalUrl () {
+    return config.has('arcgisPortal')
+      ? config.get('arcgisPortal') as string
+      : 'https://www.arcgis.com';
+  }
+
+  private getSearchRequestFromCatalog (catalog: any, portalUrl: string): IContentSearchRequest {
+     return {
+      filter: {
+        group: catalog.groups,
+        orgid: catalog.orgId,
+      },
+      options: {
+        portal: portalUrl
+      }
+    };
   }
 
   private getErrorResponse (err: any) {
