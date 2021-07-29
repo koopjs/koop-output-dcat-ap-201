@@ -46,31 +46,31 @@ export = class Output {
       const siteCatalog = _.get(siteModel, 'data.catalog');
       if (!siteCatalog) {
         res.status(200).send({});
-      } else {
-        const orgBaseUrl = `https://${domainRecord.orgKey}.maps${
-          env === 'prod' ? '' : env
-        }.arcgis.com`;
-
-        const dcatStream = getDataStreamDcatAp201({
-          domainRecord,
-          siteItem: siteModel.item,
-          orgBaseUrl,
-        });
-
-        req.res.locals.searchRequest = this.getSearchRequestFromCatalog(
-          siteCatalog,
-          portalUrl,
-        );
-
-        const datasetStream = await this.model.pullStream(req);
-
-        datasetStream
-          .pipe(dcatStream)
-          .pipe(res)
-          .on('error', (err: any) => {
-            res.status(500).send(this.getErrorResponse(err));
-          });
+        return;
       }
+      const orgBaseUrl = `https://${domainRecord.orgKey}.maps${
+        env === 'prod' ? '' : env
+      }.arcgis.com`;
+
+      const dcatStream = getDataStreamDcatAp201({
+        domainRecord,
+        siteItem: siteModel.item,
+        orgBaseUrl,
+      });
+
+      req.res.locals.searchRequest = this.getSearchRequestFromCatalog(
+        siteCatalog,
+        portalUrl,
+      );
+
+      const datasetStream = await this.model.pullStream(req);
+
+      datasetStream
+        .pipe(dcatStream)
+        .pipe(res)
+        .on('error', (err: any) => {
+          res.status(500).send(this.getErrorResponse(err));
+        });
     } catch (err) {
       res.status(500).send(this.getErrorResponse(err));
     }
