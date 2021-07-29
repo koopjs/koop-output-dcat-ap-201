@@ -65,6 +65,7 @@ export = class Output {
 
       const datasetStream = await this.model.pullStream(req);
 
+      res.set('Content-Type', 'application/json');
       datasetStream
         .pipe(dcatStream)
         .pipe(res)

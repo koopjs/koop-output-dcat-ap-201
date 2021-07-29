@@ -63,7 +63,23 @@ describe('Output Plugin', () => {
   it('handles a DCAT request', async () => {
     const siteHostName = 'download-test-qa-pre-a-hub.hubqa.arcgis.com';
 
-    await request(app).get('/dcat').set('host', siteHostName);
+    await request(app)
+      .get('/dcat')
+      .set('host', siteHostName)
+      .expect('Content-Type', /application\/json/)
+      .expect(200)
+      .expect(res => {
+        expect(res.body).toBeDefined();
+
+        // perform some basic checks to make sure we have
+        // something that looks like a DCAT feed
+        const dcatStream = res.body;
+        expect(dcatStream['@context']).toBeDefined();
+        expect(dcatStream['@id']).toBe('https://download-test-qa-pre-a-hub.hubqa.arcgis.com');
+        expect(dcatStream['dcat:dataset']).toBeInstanceOf(Array);
+        expect(dcatStream['dcat:dataset'].length).toBe(1);
+        expect(dcatStream['dcat:dataset'][0]['dcat:distribution']).toBeInstanceOf(Array);
+      });
 
     const expectedRequestOptions: IHubRequestOptions = {
       authentication: null,
@@ -75,15 +91,21 @@ describe('Output Plugin', () => {
     expect(mockLookupDomain).toHaveBeenCalledWith(siteHostName, expectedRequestOptions);
     expect(mockGetSite).toHaveBeenCalledWith('6250d80d445740cc83e03a15d72229b5', expectedRequestOptions);
 
-    // const searchRequest = plugin.model.pullStream.mock;
-    // console.log(searchRequest);
-    // expect(searchRequest).toEqual({
-    //   filter: {
-
-    //   },
-    //   options: {
-    //     portal: 'https://www.arcgis.com'
-    //   }
-    // })
+    const expressRequest: express.Request = plugin.model.pullStream.mock.calls[0][0];
+    expect(expressRequest.res.locals.searchRequest).toEqual({
+      filter: {
+        group: [
+          "3b9ffb00851f47dab74494018ffa00fb",
+          "95cc82a857fb40038628eea0dfc0210f",
+          "671f07ab39bc4ea5a345d523328ccc06",
+          "e79e2021e843428e9e0dab77eadbd507",
+          "28a62e584bf04d5e8ade7e23467b7457"
+        ],
+        orgid: 'Xj56SBi2udA78cC9'
+      },
+      options: {
+        portal: 'https://www.arcgis.com'
+      }
+    })
   });
 });
