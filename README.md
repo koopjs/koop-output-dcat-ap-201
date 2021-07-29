@@ -82,6 +82,13 @@ See the [DCAT-AP specification](https://joinup.ec.europa.eu/collection/semantic-
 ## Use
 Visit the [KoopJS docs](https://github.com/koopjs/koop-output-dcat-ap-201) for instructions on building and deploying a Koop app.
 
+This package relies on the [config](https://www.npmjs.com/package/config) package for specifying configurations. Configure your ArcGIS Online environment by adding a file at `your-project/config/default.json`:
+```json
+{
+  "arcgisPortal": "https://www.arcgis.com" // or qaext or devext depending on which env you want
+}
+```
+
 **Important!** This plugin requires the [`@koopjs/koop-provider-hub-search`](https://github.com/koopjs/koop-provider-hub-search) provider to function.
 
 ## Develop
