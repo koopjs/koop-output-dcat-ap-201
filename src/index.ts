@@ -14,10 +14,10 @@ import { getDataStreamDcatAp201 } from './dcat-ap';
 import * as config from 'config';
 
 const portalUrl = config.has('arcgisPortal')
-  ? config.get('arcgisPortal') as string
+  ? (config.get('arcgisPortal') as string)
   : 'https://www.arcgis.com';
 
-let env: 'prod'|'qa'|'dev' = 'prod';
+let env: 'prod' | 'qa' | 'dev' = 'prod';
 if (/devext\.|mapsdev\./.test(portalUrl)) {
   env = 'dev';
 } else if (/qaext\.|mapsqa\./.test(portalUrl)) {
@@ -37,7 +37,7 @@ export = class Output {
 
   model: any;
 
-  public async serve (req: Request, res: Response) {
+  public async serve(req: Request, res: Response) {
     res.set('Content-Type', 'application/json');
 
     try {
@@ -47,29 +47,32 @@ export = class Output {
       if (!siteCatalog) {
         res.status(200).send({});
       } else {
-       const dcatStream = getDataStreamDcatAp201({
-        domainRecord,
-        siteItem: siteModel.item,
-        env,
-      });
-
-      req.res.locals.searchRequest = this.getSearchRequestFromCatalog(siteCatalog, portalUrl);
-
-      const datasetStream = await this.model.pullStream(req);
-
-      datasetStream
-        .pipe(dcatStream)
-        .pipe(res)
-        .on('error', (err: any) => {
-          res.status(500).send(this.getErrorResponse(err));
+        const dcatStream = getDataStreamDcatAp201({
+          domainRecord,
+          siteItem: siteModel.item,
+          env,
         });
+
+        req.res.locals.searchRequest = this.getSearchRequestFromCatalog(
+          siteCatalog,
+          portalUrl,
+        );
+
+        const datasetStream = await this.model.pullStream(req);
+
+        datasetStream
+          .pipe(dcatStream)
+          .pipe(res)
+          .on('error', (err: any) => {
+            res.status(500).send(this.getErrorResponse(err));
+          });
       }
     } catch (err) {
       res.status(500).send(this.getErrorResponse(err));
     }
   }
 
-  private async fetchDomainAndSite (hostname) {
+  private async fetchDomainAndSite(hostname) {
     const requestOptions = this.getRequestOptions(portalUrl);
 
     const domainRecord = (await lookupDomain(
@@ -81,7 +84,7 @@ export = class Output {
     return { domainRecord, siteModel };
   }
 
-  private getRequestOptions (portalUrl: string): IHubRequestOptions {
+  private getRequestOptions(portalUrl: string): IHubRequestOptions {
     return {
       isPortal: false,
       hubApiUrl: getHubApiUrl(portalUrl),
@@ -90,19 +93,28 @@ export = class Output {
     };
   }
 
-  private getSearchRequestFromCatalog (catalog: any, portalUrl: string): IContentSearchRequest {
-     return {
+  private getSearchRequestFromCatalog(
+    catalog: any,
+    portalUrl: string,
+  ): IContentSearchRequest {
+    return {
       filter: {
         group: catalog.groups,
         orgid: catalog.orgId,
       },
       options: {
-        portal: portalUrl
-      }
+        portal: portalUrl,
+      },
     };
   }
 
-  private getErrorResponse (err: any) {
-    return { error: _.get(err, 'message', 'Encountered error while processing request') };
+  private getErrorResponse(err: any) {
+    return {
+      error: _.get(
+        err,
+        'message',
+        'Encountered error while processing request',
+      ),
+    };
   }
 };
