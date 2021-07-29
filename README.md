@@ -83,7 +83,7 @@ See the [DCAT-AP specification](https://joinup.ec.europa.eu/collection/semantic-
 Visit the [KoopJS docs](https://github.com/koopjs/koop-output-dcat-ap-201) for instructions on building and deploying a Koop app.
 
 This package relies on the [config](https://www.npmjs.com/package/config) package for specifying configurations. Configure your ArcGIS Online environment by adding a file at `your-project/config/default.json`:
-```json
+```js
 {
   "arcgisPortal": "https://www.arcgis.com" // or qaext or devext depending on which env you want
 }
@@ -104,3 +104,15 @@ npm run dev
 
 ## Test
 Run the `npm t` commmand to spin up the automated tests.
+
+
+
+[ts-badge]: https://img.shields.io/badge/TypeScript-4.3-blue.svg
+[nodejs-badge]: https://img.shields.io/badge/Node.js->=%2014.16-blue.svg
+[nodejs]: https://nodejs.org/dist/latest-v14.x/docs/api/
+[gha-badge]: https://github.com/jsynowiec/node-typescript-boilerplate/actions/workflows/nodejs.yml/badge.svg
+[gha-ci]: https://github.com/jsynowiec/node-typescript-boilerplate/actions/workflows/nodejs.yml
+[typescript]: https://www.typescriptlang.org/
+[typescript-4-3]: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-3.html
+[license-badge]: https://img.shields.io/badge/license-APLv2-blue.svg
+[license]: https://github.com/koopjs/koop-output-dcat-ap-201/blob/main/LICENSE
