@@ -13,6 +13,17 @@ import { version } from '../package.json';
 import { getDataStreamDcatAp201 } from './dcat-ap';
 import * as config from 'config';
 
+const portalUrl = config.has('arcgisPortal')
+  ? config.get('arcgisPortal') as string
+  : 'https://www.arcgis.com';
+
+let env: 'prod'|'qa'|'dev' = 'prod';
+if (/devext\.|mapsdev\./.test(portalUrl)) {
+  env = 'dev';
+} else if (/qaext\.|mapsqa\./.test(portalUrl)) {
+  env = 'qa';
+}
+
 export = class Output {
   static type = 'output';
   static version = version;
@@ -39,10 +50,10 @@ export = class Output {
        const dcatStream = getDataStreamDcatAp201({
         domainRecord,
         siteItem: siteModel.item,
-        env: this.getEnvFromPortal(this.portalUrl),
+        env,
       });
 
-      req.res.locals.searchRequest = this.getSearchRequestFromCatalog(siteCatalog, this.portalUrl);
+      req.res.locals.searchRequest = this.getSearchRequestFromCatalog(siteCatalog, portalUrl);
 
       const datasetStream = await this.model.pullStream(req);
 
@@ -59,7 +70,7 @@ export = class Output {
   }
 
   private async fetchDomainAndSite (hostname) {
-    const requestOptions = this.getRequestOptions(this.portalUrl);
+    const requestOptions = this.getRequestOptions(portalUrl);
 
     const domainRecord = (await lookupDomain(
       hostname,
@@ -79,12 +90,6 @@ export = class Output {
     };
   }
 
-  private get portalUrl () {
-    return config.has('arcgisPortal')
-      ? config.get('arcgisPortal') as string
-      : 'https://www.arcgis.com';
-  }
-
   private getSearchRequestFromCatalog (catalog: any, portalUrl: string): IContentSearchRequest {
      return {
       filter: {
@@ -99,17 +104,5 @@ export = class Output {
 
   private getErrorResponse (err: any) {
     return { error: _.get(err, 'message', 'Encountered error while processing request') };
-  }
-
-  private getEnvFromPortal (portalUrl: string) {
-    let env;
-    if (/devext\.|mapsdev\./.test(portalUrl)) {
-      env = 'dev';
-    } else if (/qaext\.|mapsqa\./.test(portalUrl)) {
-      env = 'qa';
-    } else {
-      env = 'prod';
-    }
-    return env;
   }
 };

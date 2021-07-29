@@ -2,45 +2,27 @@ import { mocked } from 'ts-jest/utils';
 
 import { readableFromArray } from './test-helpers/stream-utils';
 import * as express from 'express';
-import { Application } from 'express-serve-static-core';
+import { IItem } from '@esri/arcgis-rest-types';
 import * as request from 'supertest';
-import {
-  lookupDomain,
-  getSiteById,
-  IHubRequestOptions,
-} from '@esri/hub-common';
-import * as config from 'config';
-jest.mock('config');
-
-// this fancy code is just to _only_ mock some fns
-// and leave the rest alone
-jest.mock('@esri/hub-common', () => ({
-  ...(jest.requireActual('@esri/hub-common') as object),
-  getSiteById: jest.fn(),
-  lookupDomain: jest.fn()
-}));
 
 import * as mockDomainRecord from './test-helpers/mock-domain-record.json';
 import * as mockSiteModel from './test-helpers/mock-site-model.json';
 import * as mockDataset from './test-helpers/mock-dataset.json';
-import { IItem } from '@esri/arcgis-rest-types';
-
-const Output = require('./index');
+import { IHubRequestOptions } from '@esri/hub-common';
 
 describe('Output Plugin', () => {
-  const mockConfigModule = mocked(config, true);
-  const mockLookupDomain = mocked(lookupDomain);
-  const mockGetSite = mocked(getSiteById);
+  let mockConfigModule;
+  let mockLookupDomain;
+  let mockGetSite;
   let plugin;
-  let app: Application;
+  let app: express.Application;
 
   const siteHostName = 'download-test-qa-pre-a-hub.hubqa.arcgis.com';
 
-  beforeEach(() => {
-    mockLookupDomain.mockResolvedValue(mockDomainRecord);
-    mockGetSite.mockResolvedValue(mockSiteModel);
+  function buildPluginAndApp () {
+    const Output = require('./');
 
-    plugin = new Output();
+    const plugin = new Output();
     plugin.model = {
       pullStream: jest.fn().mockResolvedValue(readableFromArray([mockDataset])),
     };
@@ -48,13 +30,40 @@ describe('Output Plugin', () => {
     app = express();
     app.get('/dcat', plugin.serve.bind(plugin));
 
-    mockConfigModule.get.mockReturnValue('foobar');
+    return [ plugin, app ];
+  }
+
+  beforeEach(() => {
+    jest.resetModules();
+
+    const {
+      lookupDomain,
+      getSiteById,
+    } = require('@esri/hub-common');
+    // this fancy code is just to _only_ mock some fns
+    // and leave the rest alone
+    jest.mock('@esri/hub-common', () => ({
+      ...(jest.requireActual('@esri/hub-common') as object),
+      getSiteById: jest.fn(),
+      lookupDomain: jest.fn()
+    }));
+
+    mockConfigModule = mocked(require('config'), true);
+    jest.mock('config');
+
+    mockLookupDomain = mocked(lookupDomain);
+    mockGetSite = mocked(getSiteById);
+
+    mockLookupDomain.mockResolvedValue(mockDomainRecord);
+    mockGetSite.mockResolvedValue(mockSiteModel);
   });
 
   it('is configured correctly', () => {
-    expect(Output.type).toBe('output');
-    expect(Output.version).toBeDefined();
-    expect(Output.routes).toEqual([
+    [ plugin, app ] = buildPluginAndApp();
+
+    expect(plugin.constructor.type).toBe('output');
+    expect(plugin.constructor.version).toBeDefined();
+    expect(plugin.constructor.routes).toEqual([
       {
         path: '/dcat-ap/2.0.1',
         methods: ['get'],
@@ -64,6 +73,8 @@ describe('Output Plugin', () => {
   });
 
   it('handles a DCAT request', async () => {
+    [ plugin, app ] = buildPluginAndApp();
+
     await request(app)
       .get('/dcat')
       .set('host', siteHostName)
@@ -116,6 +127,9 @@ describe('Output Plugin', () => {
     mockConfigModule.has.mockReturnValue(true);
     mockConfigModule.get.mockReturnValue(qaPortal);
 
+    // rebuild plugin to trigger initialization code
+    [ plugin, app ] = buildPluginAndApp();
+
     await request(app)
       .get('/dcat')
       .set('host', siteHostName)
@@ -143,6 +157,8 @@ describe('Output Plugin', () => {
   });
 
   it('sets status to 500 if something blows up', async () => {
+    [ plugin, app ] = buildPluginAndApp();
+
     mockGetSite.mockRejectedValue(Error('404 site not found'));
 
     await request(app)
@@ -158,6 +174,8 @@ describe('Output Plugin', () => {
   });
 
   it('returns empty response if no site catalog', async () => {
+    [ plugin, app ] = buildPluginAndApp();
+
     mockGetSite.mockResolvedValue({
       item: {} as IItem,
       data: {
