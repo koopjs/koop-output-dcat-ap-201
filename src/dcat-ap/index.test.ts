@@ -5,9 +5,9 @@ import {
   getProp,
   IDomainEntry,
 } from '@esri/hub-common';
-import { readableFromArray, streamToString } from './test-helpers/stream-utils';
+import { readableFromArray, streamToString } from '../test-helpers/stream-utils';
 import { getDataStreamDcatAp201 } from './';
-import * as datasetFromApi from './test-helpers/mock-dataset.json';
+import * as datasetFromApi from '../test-helpers/mock-dataset.json';
 
 function generateDcatFeed(
   domainRecord,

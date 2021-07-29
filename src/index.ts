@@ -1,53 +1,90 @@
-import { getHubApiUrl, getSiteById, IDomainEntry, IHubRequestOptions, lookupDomain } from '@esri/hub-common';
+import {
+  getHubApiUrl,
+  getPortalApiUrl,
+  getSiteById,
+  IDomainEntry,
+  IHubRequestOptions,
+  lookupDomain,
+} from '@esri/hub-common';
 import { IContentSearchRequest } from '@esri/hub-search';
 import { Request, Response } from 'express';
-import _ from 'lodash';
+import * as _ from 'lodash';
 import { version } from '../package.json';
 import { getDataStreamDcatAp201 } from './dcat-ap';
+import * as config from 'config';
 
 export = class Output {
-    static type = 'output';
-    static version = version;
-    static routes = [
-      {
-        path: '/dcat-ap/2.0.1',
-        methods: ['get'],
-        handler: 'serve'
-      }
-    ];
+  static type = 'output';
+  static version = version;
+  static routes = [
+    {
+      path: '/dcat-ap/2.0.1',
+      methods: ['get'],
+      handler: 'serve',
+    },
+  ];
 
-    model: any;
+  model: any;
 
-    async serve (req: Request, res: Response) {
-      const portalUrl = 'https://www.arcgis.com';
+  public async serve (req: Request, res: Response) {
+    const portalUrl = config.has('arcgisPortal')
+      ? config.get('arcgisPortal') as string
+      : 'https://www.arcgis.com';
 
-      const requestOptions: IHubRequestOptions = {
-        isPortal: false,
-        hubApiUrl: getHubApiUrl(portalUrl),
-        portal: portalUrl,
-        authentication: null
-      };
+    const requestOptions: IHubRequestOptions = {
+      isPortal: false,
+      hubApiUrl: getHubApiUrl(portalUrl),
+      portal: getPortalApiUrl(portalUrl),
+      authentication: null,
+    };
 
-      const domainRecord = await lookupDomain(req.hostname, requestOptions) as IDomainEntry;
+    try {
+      const domainRecord = (await lookupDomain(
+        req.hostname,
+        requestOptions,
+      )) as IDomainEntry;
       const siteModel = await getSiteById(domainRecord.siteId, requestOptions);
 
       const dcatStream = getDataStreamDcatAp201({
         domainRecord,
         siteItem: siteModel.item,
-        env: 'prod'
+        env: this.getEnvFromPortal(portalUrl),
       });
 
       const searchRequest: IContentSearchRequest = {
         filter: {
           group: _.get(siteModel, 'data.catalog.groups'),
-          orgid: _.get(siteModel, 'data.catalog.orgId')
+          orgid: _.get(siteModel, 'data.catalog.orgId'),
+        },
+        options: {
+          portal: portalUrl
         }
       };
 
       req.res.locals.searchRequest = searchRequest;
 
-      const datasetStream = this.model.pullStream(req);
+      const datasetStream = await this.model.pullStream(req);
 
-      datasetStream.pipe(dcatStream).pipe(res);
+      datasetStream
+        .pipe(dcatStream)
+        .pipe(res)
+        .on('error', (err) => {
+          res.status(500).send(err);
+        });
+    } catch (err) {
+      res.status(500).send(err);
     }
-}
+  }
+
+  private getEnvFromPortal (portalUrl: string) {
+    let env;
+    if (/devext\.|mapsdev\./.test(portalUrl)) {
+      env = 'dev';
+    } else if (/qaext\.|mapsqa\./.test(portalUrl)) {
+      env = 'qa';
+    } else {
+      env = 'prod';
+    }
+    return env;
+  }
+};

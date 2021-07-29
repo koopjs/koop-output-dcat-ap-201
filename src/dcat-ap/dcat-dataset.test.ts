@@ -1,7 +1,7 @@
 import { cloneObject } from '@esri/hub-common';
 import { DcatDataset } from './dcat-dataset';
 
-import * as datasetFromApi from './test-helpers/mock-dataset.json';
+import * as datasetFromApi from '../test-helpers/mock-dataset.json';
 
 const siteUrl = 'https://foobar.hub.arcgis.com'
 const orgTitle = 'My Fun Org'
