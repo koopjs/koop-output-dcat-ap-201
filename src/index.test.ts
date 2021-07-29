@@ -23,6 +23,7 @@ jest.mock('@esri/hub-common', () => ({
 import * as mockDomainRecord from './test-helpers/mock-domain-record.json';
 import * as mockSiteModel from './test-helpers/mock-site-model.json';
 import * as mockDataset from './test-helpers/mock-dataset.json';
+import { IItem } from '@esri/arcgis-rest-types';
 
 const Output = require('./index');
 
@@ -32,6 +33,8 @@ describe('Output Plugin', () => {
   const mockGetSite = mocked(getSiteById);
   let plugin;
   let app: Application;
+
+  const siteHostName = 'download-test-qa-pre-a-hub.hubqa.arcgis.com';
 
   beforeEach(() => {
     mockLookupDomain.mockResolvedValue(mockDomainRecord);
@@ -61,8 +64,6 @@ describe('Output Plugin', () => {
   });
 
   it('handles a DCAT request', async () => {
-    const siteHostName = 'download-test-qa-pre-a-hub.hubqa.arcgis.com';
-
     await request(app)
       .get('/dcat')
       .set('host', siteHostName)
@@ -107,5 +108,70 @@ describe('Output Plugin', () => {
         portal: 'https://www.arcgis.com'
       }
     })
+  });
+
+  it('points at AGO environment from config', async () => {
+    const qaPortal = 'https://qaext.arcgis.com';
+
+    mockConfigModule.has.mockReturnValue(true);
+    mockConfigModule.get.mockReturnValue(qaPortal);
+
+    await request(app)
+      .get('/dcat')
+      .set('host', siteHostName)
+      .expect('Content-Type', /application\/json/)
+      .expect(200)
+      .expect(res => {
+        expect(res.body['dct:creator']['@id']).toBe('https://qa-pre-a-hub.mapsqa.arcgis.com')
+      });
+
+    expect(mockConfigModule.has).toHaveBeenCalledWith('arcgisPortal');
+    expect(mockConfigModule.get).toHaveBeenCalledWith('arcgisPortal');
+
+    const expectedRequestOptions: IHubRequestOptions = {
+      authentication: null,
+      hubApiUrl: 'https://hubqa.arcgis.com',
+      isPortal: false,
+      portal: 'https://qaext.arcgis.com/sharing/rest',
+    };
+
+    expect(mockLookupDomain).toHaveBeenCalledWith(siteHostName, expectedRequestOptions);
+    expect(mockGetSite).toHaveBeenCalledWith('6250d80d445740cc83e03a15d72229b5', expectedRequestOptions);
+
+    const expressRequest: express.Request = plugin.model.pullStream.mock.calls[0][0];
+    expect(expressRequest.res.locals.searchRequest.options.portal).toBe(qaPortal)
+  });
+
+  it('sets status to 500 if something blows up', async () => {
+    mockGetSite.mockRejectedValue(Error('404 site not found'));
+
+    await request(app)
+      .get('/dcat')
+      .set('host', siteHostName)
+      .expect('Content-Type', /application\/json/)
+      .expect(500)
+      .expect(res => {
+        expect(res.body).toEqual({ error: '404 site not found' });
+      });
+
+    // TODO test stream error
+  });
+
+  it('returns empty response if no site catalog', async () => {
+    mockGetSite.mockResolvedValue({
+      item: {} as IItem,
+      data: {
+        // no site catalog
+      }
+    });
+
+    await request(app)
+      .get('/dcat')
+      .set('host', siteHostName)
+      .expect('Content-Type', /application\/json/)
+      .expect(200)
+      .expect(res => {
+        expect(res.body).toEqual({});
+      });
   });
 });

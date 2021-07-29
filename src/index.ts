@@ -27,6 +27,8 @@ export = class Output {
   model: any;
 
   public async serve (req: Request, res: Response) {
+    res.set('Content-Type', 'application/json');
+
     const portalUrl = config.has('arcgisPortal')
       ? config.get('arcgisPortal') as string
       : 'https://www.arcgis.com';
@@ -44,6 +46,11 @@ export = class Output {
         requestOptions,
       )) as IDomainEntry;
       const siteModel = await getSiteById(domainRecord.siteId, requestOptions);
+
+      if (!_.has(siteModel, 'data.catalog')) {
+        res.status(200).send({});
+        return;
+      }
 
       const dcatStream = getDataStreamDcatAp201({
         domainRecord,
@@ -65,16 +72,19 @@ export = class Output {
 
       const datasetStream = await this.model.pullStream(req);
 
-      res.set('Content-Type', 'application/json');
       datasetStream
         .pipe(dcatStream)
         .pipe(res)
         .on('error', (err) => {
-          res.status(500).send(err);
+          res.status(500).send(this.getErrorResponse(err));
         });
     } catch (err) {
-      res.status(500).send(err);
+      res.status(500).send(this.getErrorResponse(err));
     }
+  }
+
+  private getErrorResponse (err: any) {
+    return { error: _.get(err, 'message', 'Encountered error while processing request') };
   }
 
   private getEnvFromPortal (portalUrl: string) {
