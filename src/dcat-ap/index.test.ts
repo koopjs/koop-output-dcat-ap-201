@@ -13,9 +13,9 @@ function generateDcatFeed(
   domainRecord,
   siteItem,
   datasets,
-  env: 'dev' | 'qa' | 'prod' = 'qa',
+  orgBaseUrl = 'https://qa-pre-a-hub.mapsqa.arcgis.com'
 ) {
-  const dcatStream = getDataStreamDcatAp201({ domainRecord, siteItem, env });
+  const dcatStream = getDataStreamDcatAp201({ domainRecord, siteItem, orgBaseUrl });
 
   const docStream = readableFromArray(datasets); // no datasets since we're just checking the catalog
 
@@ -221,44 +221,18 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     }
   });
 
-  it('DCAT feed responds to AGO environment', async function () {
-    const feedDev = await generateDcatFeed(
-      domainRecord,
-      siteItem,
-      [datasetFromApi],
-      'dev',
-    );
-    expect(feedDev['dct:creator']['@id']).toBe(
-      'https://qa-pre-a-hub.mapsdev.arcgis.com',
-    );
-    expect(
-      new URL(feedDev['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-    ).toBe('qa-pre-a-hub.mapsdev.arcgis.com');
-
-    const feedQa = await generateDcatFeed(
-      domainRecord,
-      siteItem,
-      [datasetFromApi],
-      'qa',
-    );
-    expect(feedQa['dct:creator']['@id']).toBe(
-      'https://qa-pre-a-hub.mapsqa.arcgis.com',
-    );
-    expect(
-      new URL(feedQa['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-    ).toBe('qa-pre-a-hub.mapsqa.arcgis.com');
-
+  it('DCAT feed uses org base URL', async function () {
     const feedProd = await generateDcatFeed(
       domainRecord,
       siteItem,
       [datasetFromApi],
-      'prod',
+      'https://qa-pre-a-hub.mapsdev.arcgis.com',
     );
     expect(feedProd['dct:creator']['@id']).toBe(
-      'https://qa-pre-a-hub.maps.arcgis.com',
+      'https://qa-pre-a-hub.mapsdev.arcgis.com',
     );
     expect(
       new URL(feedProd['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
-    ).toBe('qa-pre-a-hub.maps.arcgis.com');
+    ).toBe('qa-pre-a-hub.mapsdev.arcgis.com');
   });
 });

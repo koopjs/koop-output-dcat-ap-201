@@ -20,13 +20,13 @@ export class DcatDataset {
   //  ];
 
   private _dto: any;
-  private _portalUrl: string;
+  private _orgBaseUrl: string;
   private _orgTitle: string;
   private _siteUrl: string;
 
-  constructor (dto: any, portalUrl: string, orgTitle: string, siteUrl: string) {
+  constructor (dto: any, orgBaseUrl: string, orgTitle: string, siteUrl: string) {
     this._dto = dto;
-    this._portalUrl = portalUrl;
+    this._orgBaseUrl = orgBaseUrl;
     this._orgTitle = orgTitle;
     this._siteUrl = siteUrl;
   }
@@ -46,7 +46,7 @@ export class DcatDataset {
   get owner (): string { return this._get('owner'); }
   get ownerUri (): string {
     return getUserUrl({
-      portal: `${this._portalUrl}/sharing/rest`,
+      portal: `${this._orgBaseUrl}/sharing/rest`,
       username: this.owner
     } as UserSession) + '?f=json';
   }

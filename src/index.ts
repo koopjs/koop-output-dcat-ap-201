@@ -47,10 +47,14 @@ export = class Output {
       if (!siteCatalog) {
         res.status(200).send({});
       } else {
+        const orgBaseUrl = `https://${domainRecord.orgKey}.maps${
+          env === 'prod' ? '' : env
+        }.arcgis.com`;
+
         const dcatStream = getDataStreamDcatAp201({
           domainRecord,
           siteItem: siteModel.item,
-          env,
+          orgBaseUrl,
         });
 
         req.res.locals.searchRequest = this.getSearchRequestFromCatalog(

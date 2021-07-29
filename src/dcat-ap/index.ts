@@ -7,15 +7,11 @@ import { FeedFormatterStream } from './feed-formatter-stream';
 interface IDcatAPOptions {
   siteItem: IItem;
   domainRecord: IDomainEntry,
-  env: 'prod'|'qa'|'dev'
+  orgBaseUrl: string;
 }
 
 export function getDataStreamDcatAp201(options: IDcatAPOptions) {
-  const portalUrl = `https://${options.domainRecord.orgKey}.maps${
-    options.env === 'prod' ? '' : options.env
-  }.arcgis.com`;
-
-  const catalogStr = formatDcatCatalog({ ...options, portalUrl });
+  const catalogStr = formatDcatCatalog({ ...options });
   // lop off the "\n}"
   const header = `${catalogStr.substr(
     0,
@@ -27,7 +23,7 @@ export function getDataStreamDcatAp201(options: IDcatAPOptions) {
   const formatFn = (chunk) => {
     const dataset = new Dataset(
       chunk,
-      portalUrl,
+      options.orgBaseUrl,
       options.domainRecord.orgTitle,
       options.siteItem.url,
     );

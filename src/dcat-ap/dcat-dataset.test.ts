@@ -5,11 +5,11 @@ import * as datasetFromApi from '../test-helpers/mock-dataset.json';
 
 const siteUrl = 'https://foobar.hub.arcgis.com'
 const orgTitle = 'My Fun Org'
-const portalUrl = 'https://my-fun-org.maps.arcgis.com'
+const orgBaseUrl = 'https://my-fun-org.maps.arcgis.com'
 
 describe('DcatDataset', () => {
   it('Dataset props come from right places', function() {
-    const dataset = new DcatDataset(datasetFromApi, portalUrl, orgTitle, siteUrl)
+    const dataset = new DcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
 
     expect(dataset.id).toBe('f4bcc1035b7d46cba95e977f4affb6be_0')
     expect(dataset.url).toBe(
@@ -44,7 +44,7 @@ describe('DcatDataset', () => {
     const noMetadata = cloneObject(datasetFromApi)
     delete noMetadata.metadata
 
-    const dataset = new DcatDataset(noMetadata, portalUrl, orgTitle, siteUrl)
+    const dataset = new DcatDataset(noMetadata, orgBaseUrl, orgTitle, siteUrl)
 
     expect(dataset.language).toBe('eng')
     expect(dataset.keyword).toEqual(['Data collection', 'just modified'])
@@ -59,13 +59,13 @@ describe('DcatDataset', () => {
     const expectedKeywords = ['ArcGIS Hub page'];
 
     expect(
-      new DcatDataset({ ...pageDataset, tags: undefined }, portalUrl, orgTitle, siteUrl).keyword
+      new DcatDataset({ ...pageDataset, tags: undefined }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
     expect(
-      new DcatDataset({ ...pageDataset, tags: [] }, portalUrl, orgTitle, siteUrl).keyword
+      new DcatDataset({ ...pageDataset, tags: [] }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
     expect(
-      new DcatDataset({ ...pageDataset, tags: [''] }, portalUrl, orgTitle, siteUrl).keyword
+      new DcatDataset({ ...pageDataset, tags: [''] }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
   })
 
@@ -80,8 +80,8 @@ describe('DcatDataset', () => {
       latestWkid: 8374
     }
 
-    const datasetNoSR = new DcatDataset(noSR, portalUrl, orgTitle, siteUrl)
-    const datasetSR = new DcatDataset(withSR, portalUrl, orgTitle, siteUrl)
+    const datasetNoSR = new DcatDataset(noSR, orgBaseUrl, orgTitle, siteUrl)
+    const datasetSR = new DcatDataset(withSR, orgBaseUrl, orgTitle, siteUrl)
 
     expect(datasetNoSR.getDownloadUrl('geojson')).toBe(
       'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0.geojson'
@@ -92,7 +92,7 @@ describe('DcatDataset', () => {
   })
 
   it('getOgcUrl', function() {
-    const dataset = new DcatDataset(datasetFromApi, portalUrl, orgTitle, siteUrl)
+    const dataset = new DcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
 
     expect(dataset.getOgcUrl()).toBe(
       'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/services/Tahoe_Things/FeatureServer/WMSServer?request=GetCapabilities&service=WMS'
@@ -110,8 +110,8 @@ describe('DcatDataset', () => {
     // supportsWFS.server.supportedExtensions = 'WFSServer'
     // supportsWMS.server.supportedExtensions = 'WMSServer'
 
-    const datasetWFS = new DcatDataset(supportsWFS, portalUrl, orgTitle, siteUrl)
-    const datasetWMS = new DcatDataset(supportsWMS, portalUrl, orgTitle, siteUrl)
+    const datasetWFS = new DcatDataset(supportsWFS, orgBaseUrl, orgTitle, siteUrl)
+    const datasetWMS = new DcatDataset(supportsWMS, orgBaseUrl, orgTitle, siteUrl)
 
     expect(datasetWFS.supportsWFS).toBeTruthy()
     expect(datasetWFS.supportsWMS).toBeFalsy()
