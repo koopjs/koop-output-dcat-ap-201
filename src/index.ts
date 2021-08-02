@@ -1,3 +1,7 @@
+import { Request, Response } from 'express';
+import * as config from 'config';
+import * as _ from 'lodash';
+
 import {
   getHubApiUrl,
   getPortalApiUrl,
@@ -7,11 +11,10 @@ import {
   lookupDomain,
 } from '@esri/hub-common';
 import { IContentSearchRequest } from '@esri/hub-search';
-import { Request, Response } from 'express';
-import * as _ from 'lodash';
+
 import { version } from '../package.json';
 import { getDataStreamDcatAp201 } from './dcat-ap';
-import * as config from 'config';
+import { requiredFields } from './dcat-ap/dcat-dataset';
 
 const portalUrl = config.has('arcgisPortal')
   ? (config.get('arcgisPortal') as string)
@@ -58,9 +61,10 @@ export = class Output {
         orgBaseUrl,
       });
 
-      req.res.locals.searchRequest = this.getSearchRequestFromCatalog(
+      req.res.locals.searchRequest = this.getSearchRequest(
         siteCatalog,
         portalUrl,
+        requiredFields
       );
 
       const datasetStream = await this.model.pullStream(req);
@@ -97,19 +101,22 @@ export = class Output {
     };
   }
 
-  private getSearchRequestFromCatalog(
+  private getSearchRequest(
     catalog: any,
     portalUrl: string,
+    fields: string[]
   ): IContentSearchRequest {
-    return {
+    const searchRequest: IContentSearchRequest = {
       filter: {
         group: catalog.groups,
         orgid: catalog.orgId,
       },
       options: {
         portal: portalUrl,
+        fields: fields.join(',')
       },
     };
+    return searchRequest;
   }
 
   private getErrorResponse(err: any) {

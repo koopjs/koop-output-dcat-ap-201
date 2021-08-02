@@ -116,7 +116,8 @@ describe('Output Plugin', () => {
         orgid: 'Xj56SBi2udA78cC9'
       },
       options: {
-        portal: 'https://www.arcgis.com'
+        portal: 'https://www.arcgis.com',
+        fields: 'id,url,owner,name,type,typeKeywords,tags,description,culture,created,metadata,server,geometryType'
       }
     })
   });

@@ -4,21 +4,23 @@ import * as _ from 'lodash';
 import { isPage } from '@esri/hub-sites';
 import { UserSession } from '@esri/arcgis-rest-auth';
 
-export class DcatDataset {
-  //  static requiredPaths = [
-  //    'default.id',
-  //    'default.url',
-  //    'item.owner',
-  //    'item.title',
-  //    'item.tags',
-  //    'item.description',
-  //    'item.culture',
-  //    'item.created',
-  //    'metadata.metadata',
-  //    'layer.geometryType',
-  //    'server.supportedExtensions'
-  //  ];
+export const requiredFields = [
+  'id',
+  'url',
+  'owner',
+  'name',
+  'type',
+  'typeKeywords',
+  'tags',
+  'description',
+  'culture',
+  'created',
+  'metadata',
+  'server',
+  'geometryType'
+];
 
+export class DcatDataset {
   private _dto: any;
   private _orgBaseUrl: string;
   private _orgTitle: string;
