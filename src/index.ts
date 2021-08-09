@@ -27,7 +27,7 @@ if (/devext\.|mapsdev\./.test(portalUrl)) {
   env = 'qa';
 }
 
-export = class Output {
+export = class OutputDcatAp201 {
   static type = 'output';
   static version = version;
   static routes = [
