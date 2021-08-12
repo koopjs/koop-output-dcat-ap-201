@@ -102,13 +102,12 @@ describe('DcatDataset', () => {
     )
   })
 
-  // TODO - skipped until we expose these capabilities in the API
-  it.skip('correctly reports WFS/WMS support', function() {
+  it('correctly reports WFS/WMS support', function() {
     const supportsWFS = cloneObject(datasetFromApi)
     const supportsWMS = cloneObject(datasetFromApi)
 
-    // supportsWFS.server.supportedExtensions = 'WFSServer'
-    // supportsWMS.server.supportedExtensions = 'WMSServer'
+    supportsWFS.supportedExtensions = 'WFSServer'
+    supportsWMS.supportedExtensions = 'WMSServer'
 
     const datasetWFS = new DcatDataset(supportsWFS, orgBaseUrl, orgTitle, siteUrl)
     const datasetWMS = new DcatDataset(supportsWMS, orgBaseUrl, orgTitle, siteUrl)

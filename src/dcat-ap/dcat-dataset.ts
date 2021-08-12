@@ -84,7 +84,7 @@ export class DcatDataset {
 
   get isFeatureLayer (): boolean { return /_/.test(this.id); }
   get hasGeometryType (): boolean { return !!this._get('geometryType'); }
-  private get _supportedExtensions () { return _.get(this._dto, 'server.supportedExtensions'); }
+  private get _supportedExtensions () { return _.get(this._dto, 'supportedExtensions'); }
   get supportsWFS (): boolean { return this._supportedExtensions && this._supportedExtensions.includes('WFSServer'); }
   get supportsWMS (): boolean { return this._supportedExtensions && this._supportedExtensions.includes('WMSServer'); }
 
