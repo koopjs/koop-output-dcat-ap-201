@@ -1,5 +1,13 @@
 # CHANGELOG.md
 
+## 1.0.1
+
+Added
+- Improved feed endpoint efficiency by only loading attributes used in the feed [#4](https://github.com/koopjs/koop-output-dcat-ap-201/pull/4)
+
+Fixed
+- WMS and WFS distributions are now attached when available [#6](https://github.com/koopjs/koop-output-dcat-ap-201/pull/6)
+
 ## 1.0.0
 
 Added
