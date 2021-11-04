@@ -17,7 +17,8 @@ export const requiredFields = [
   'created',
   'metadata',
   'server',
-  'geometryType'
+  'geometryType',
+  'orgContactEmail'
 ];
 
 export class DcatDataset {
@@ -91,7 +92,7 @@ export class DcatDataset {
   get orgTitle (): string { return this._orgTitle; }
 
   // TODO - add to search API
-  get orgContactUrl (): string { return null; }
+  get orgContactUrl (): string { return this._get('orgContactEmail'); }
 
   /* BEGIN INSPIRE METADATA PROPS (may want to introduce a metadata class to manage formats eventually) */
 
