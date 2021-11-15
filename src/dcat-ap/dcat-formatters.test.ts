@@ -1,4 +1,3 @@
-// import * as dcatDatasetModule from './dcat-dataset';
 import { formatDcatDataset } from './dcat-formatters';
 import { defaultFormatTemplate }  from '../default-format-template';
 
@@ -10,7 +9,7 @@ const dataset: any = {
     'Create your own initiative by combining existing applications with a custom site. Use this initiative to form teams around a problem and invite your community to participate.',
   ownerUri: '',
   owner: 'jbartley',
-  orgContactUrl: 'contact@funorg.com',
+  orgContactEmail: 'contact@funorg.com',
   orgTitle: '',
   language: 'eng',
   keyword: ['property', 'vacant', 'abandoned', 'revitalization'],
@@ -30,7 +29,7 @@ describe('formatDcatDataset', () => {
         '@id': dataset.ownerUri,
         '@type': 'Contact',
         'vcard:fn': dataset.owner,
-        'vcard:hasEmail': dataset.orgContactUrl,
+        'vcard:hasEmail': dataset.orgContactEmail,
       },
       'dct:publisher': dataset.orgTitle,
       'dcat:theme': 'geospatial',
@@ -63,11 +62,11 @@ describe('formatDcatDataset', () => {
     expect(result['dcat:distribution']).toBeTruthy();
   });
 
-  it('DCAT language node null if no language', function () {
+  it('DCAT language node empty if no language', function () {
     const withoutLanguage = { ...dataset, language: null };
     const result = JSON.parse(formatDcatDataset(withoutLanguage, defaultFormatTemplate));
 
-    expect(result['dct:language']).toBe(null);
+    expect(result['dct:language']).toBe('');
   });
 
   it('DCAT distributions have correct format', function () {

@@ -1,9 +1,10 @@
 import { IItem } from '@esri/arcgis-rest-portal';
 import { IDomainEntry } from '@esri/hub-common';
-import { DcatDataset, getDownloadUrl, getOgcUrl, hasGeometryType, isFeatureLayer, supportsWFS, supportsWMS } from './dcat-dataset';
+import { getDownloadUrl, getOgcUrl, hasGeometryType, isFeatureLayer, supportsWFS, supportsWMS } from './dcat-dataset';
 import alpha2ToAlpha3Langs from './languages';
 import * as _ from 'lodash';
 import { adlib, TransformsList } from 'adlib';
+import { defaultFormatTemplate } from '../default-format-template';
 
 /**
  * Takes a locale (e.g. "en-us") and returns an
@@ -18,7 +19,7 @@ export type DatasetFormatTemplate = Record<string, any>;
 /**
  * Formats a single dataset object as a 'dcat:Dataset'
  */
-export function formatDcatDataset(dcatDataset: DcatDataset, template: DatasetFormatTemplate) {
+export function formatDcatDataset(dcatDataset: any, template: DatasetFormatTemplate) {
   const transforms: TransformsList = {
     toISO (_key, val) {
       return new Date(val).toISOString();
@@ -31,16 +32,12 @@ export function formatDcatDataset(dcatDataset: DcatDataset, template: DatasetFor
 
   const formattedDataset = adlib(template, dcatDataset, transforms);
 
-  formattedDataset['dcat:distribution'] = generateDistributions(dcatDataset); // wait, why is this 'dcat' when all other props use 'dct'?
+  formattedDataset['dcat:distribution'] = generateDistributions(dcatDataset);
 
   if (dcatDataset.language) {
     formattedDataset['dct:language'] = {
       '@id': `lang:${dcatDataset.language.toUpperCase()}`,
     };
-  }
-
-  if (!dcatDataset.provenance) {
-    formattedDataset['dct:provenance'] = null;
   }
 
   return indent(JSON.stringify(formattedDataset, null, '\t'), 2);
@@ -100,7 +97,7 @@ function indent(str: string, nTabs = 1) {
  * See https://github.com/SEMICeu/dcat-ap_shacl/blob/master/shacl/dcat-ap-mdr-vocabularies.shapes.ttl
  * for validations.
  */
-function generateDistributions(dataset: DcatDataset) {
+function generateDistributions(dataset: any) {
   const distributionFns = [];
 
   // always add the Hub landing page
@@ -131,7 +128,7 @@ function generateDistributions(dataset: DcatDataset) {
 /**
  * Generates the distribution for the Hub landing page
  */
-function getHubLandingPageDistribution(dataset: DcatDataset) {
+function getHubLandingPageDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': dataset.landingPage,
@@ -146,7 +143,7 @@ function getHubLandingPageDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for the Esri Rest API
  */
-function getEsriRESTDistribution(dataset: DcatDataset) {
+function getEsriRESTDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': dataset.url,
@@ -161,7 +158,7 @@ function getEsriRESTDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for geoJSON
  */
-function getGeoJSONDistribution(dataset: DcatDataset) {
+function getGeoJSONDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': getDownloadUrl(dataset, 'geojson'),
@@ -176,7 +173,7 @@ function getGeoJSONDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for CSV
  */
-function getCSVDistribution(dataset: DcatDataset) {
+function getCSVDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': getDownloadUrl(dataset, 'csv'),
@@ -191,7 +188,7 @@ function getCSVDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for KML
  */
-function getKMLDistribution(dataset: DcatDataset) {
+function getKMLDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': getDownloadUrl(dataset, 'kml'),
@@ -206,7 +203,7 @@ function getKMLDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for Shapefile
  */
-function getShapefileDistribution(dataset: DcatDataset) {
+function getShapefileDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': getDownloadUrl(dataset, 'zip'),
@@ -221,7 +218,7 @@ function getShapefileDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for OGC WMS
  */
-function getOGCWMSDistribution(dataset: DcatDataset) {
+function getOGCWMSDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': getOgcUrl(dataset, 'WMS'),
@@ -236,7 +233,7 @@ function getOGCWMSDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for OGC WFS
  */
-function getOGCWFSDistribution(dataset: DcatDataset) {
+function getOGCWFSDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': getOgcUrl(dataset, 'WFS'),
@@ -246,4 +243,40 @@ function getOGCWFSDistribution(dataset: DcatDataset) {
     'dct:description': 'OGC WFS',
     'dct:title': 'OGC WFS',
   };
+}
+
+/**
+ * Remove overwrites of protected keys from a custom format template
+ */
+export function scrubProtectedKeys(template: DatasetFormatTemplate): DatasetFormatTemplate {
+  const scrubbedTemplate = _.cloneDeep(template);
+
+  delete scrubbedTemplate['@type'];
+  delete scrubbedTemplate['@id'];
+
+  if (scrubbedTemplate['dcat:contactPoint']) {
+    scrubbedTemplate['dcat:contactPoint']['@id'] = '{{ownerUri}}';
+    scrubbedTemplate['dcat:contactPoint']['@type'] = 'Contact';
+  }
+
+  delete scrubbedTemplate['dcat:theme'];
+  delete scrubbedTemplate['dct:identifier']; 
+  delete scrubbedTemplate['dcat:keyword']; 
+  delete scrubbedTemplate['dct:issued']; 
+  delete scrubbedTemplate['dct:language'];
+  delete scrubbedTemplate['dcat:distribution'];
+
+  return scrubbedTemplate;
+}
+
+/**
+ * Merges a custom format template with the default custom format template. 
+ * Ignores attempts to overwrite protected keys.
+ */
+export function mergeWithDefaultFormatTemplate(customTemplate?: DatasetFormatTemplate): DatasetFormatTemplate {
+  if (!customTemplate) {
+    return defaultFormatTemplate;
+  }
+  const scrubbedCustomTemplate = scrubProtectedKeys(customTemplate);
+  return Object.assign({}, defaultFormatTemplate, scrubbedCustomTemplate);
 }
