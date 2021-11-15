@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import * as config from 'config';
 import * as _ from 'lodash';
+import { defaultFormatTemplate } from './default-format-template';
+import { listDependencies } from 'adlib';
 
 import {
   getHubApiUrl,
@@ -14,7 +16,8 @@ import { IContentSearchRequest } from '@esri/hub-search';
 
 import { version } from '../package.json';
 import { getDataStreamDcatAp201 } from './dcat-ap';
-import { requiredFields } from './dcat-ap/dcat-dataset';
+import { defaultRequiredFields } from './dcat-ap/dcat-dataset';
+import { DatasetFormatTemplate } from './dcat-ap/dcat-formatters';
 
 const portalUrl = config.has('arcgisPortal')
   ? (config.get('arcgisPortal') as string)
@@ -25,6 +28,33 @@ if (/devext\.|mapsdev\./.test(portalUrl)) {
   env = 'dev';
 } else if (/qaext\.|mapsqa\./.test(portalUrl)) {
   env = 'qa';
+}
+
+function getApiTermsFromDependencies (dependencies: string[]) {
+  // Hub API only supports scoping by top-level terms
+  return Array.from(new Set(dependencies.map(dep => dep.split('.')[0])));
+}
+
+function scrubProtectedKeys(template: DatasetFormatTemplate): DatasetFormatTemplate {
+  const scrubbedTemplate = _.cloneDeep(template);
+
+  delete scrubbedTemplate['@type'];
+  delete scrubbedTemplate['@id'];
+  delete scrubbedTemplate['dct:identifier'];
+  delete scrubbedTemplate['dct:webService']; // Does this apply to AP?
+  delete scrubbedTemplate['dcat:distribution'];
+
+  if (scrubbedTemplate['dcat:contactPoint']) {
+    scrubbedTemplate['dcat:contactPoint']['@id'] = '{{ownerUri}}';
+    scrubbedTemplate['dcat:contactPoint']['@type'] = 'Contact';
+  }
+
+  return scrubbedTemplate;
+}
+
+function mergeWithDefaultFormatTemplate(customTemplate: DatasetFormatTemplate): DatasetFormatTemplate {
+  const scrubbedCustomTemplate = scrubProtectedKeys(customTemplate);
+  return Object.assign({}, defaultFormatTemplate, scrubbedCustomTemplate);
 }
 
 export = class OutputDcatAp201 {
@@ -55,16 +85,23 @@ export = class OutputDcatAp201 {
         env === 'prod' ? '' : env
       }.arcgis.com`;
 
+      const customFormatTemplate = _.get(siteModel, 'data.feeds.dcatAP201', {});
+      const mergedFormatTemplate = mergeWithDefaultFormatTemplate(customFormatTemplate);
+      
       const dcatStream = getDataStreamDcatAp201({
         domainRecord,
         siteItem: siteModel.item,
         orgBaseUrl,
+        datasetFormatTemplate: mergedFormatTemplate
       });
 
+      const dependencies = [...defaultRequiredFields, ...listDependencies(customFormatTemplate)];
+      const apiTerms = getApiTermsFromDependencies(dependencies);
+      
       req.res.locals.searchRequest = this.getSearchRequest(
         siteCatalog,
         portalUrl,
-        requiredFields
+        apiTerms
       );
 
       const datasetStream = await this.model.pullStream(req);

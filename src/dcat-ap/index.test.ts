@@ -8,6 +8,7 @@ import {
 import { readableFromArray, streamToString } from '../test-helpers/stream-utils';
 import { getDataStreamDcatAp201 } from './';
 import * as datasetFromApi from '../test-helpers/mock-dataset.json';
+import { defaultFormatTemplate } from '../default-format-template';
 
 function generateDcatFeed(
   domainRecord,
@@ -15,7 +16,7 @@ function generateDcatFeed(
   datasets,
   orgBaseUrl = 'https://qa-pre-a-hub.mapsqa.arcgis.com'
 ) {
-  const dcatStream = getDataStreamDcatAp201({ domainRecord, siteItem, orgBaseUrl });
+  const dcatStream = getDataStreamDcatAp201({ domainRecord, siteItem, orgBaseUrl, datasetFormatTemplate: defaultFormatTemplate });
 
   const docStream = readableFromArray(datasets); // no datasets since we're just checking the catalog
 
@@ -167,7 +168,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     });
   });
 
-  it('DCAT dataset has defaults when metadata not available', async function () {
+  it('DCAT dataset has defaults when metadata not available', async function () { // I don't think we want to default provenance to null...
     const datasetWithoutMetadata = cloneObject(datasetFromApi);
     delete datasetWithoutMetadata.metadata;
 
@@ -191,7 +192,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     });
   });
 
-  it('DCAT dataset attributes default to null where values not available', async function () {
+  it('DCAT dataset attributes default to null where values not available', async function () { // Not Valid anymore..
     // define a few mappings to check
     const mappings = [
       // TODO - reactivate when org contact is available

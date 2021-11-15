@@ -1,6 +1,7 @@
 {
   "errors": [],
   "access": "public",
+  "orgContactEmail": "mailto:email@service.com",
   "additionalResources": [
     {
       "url": "https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/rest/services/Tahoe_Things/FeatureServer"

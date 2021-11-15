@@ -1,7 +1,9 @@
 import { IItem } from '@esri/arcgis-rest-portal';
 import { IDomainEntry } from '@esri/hub-common';
-import { DcatDataset } from './dcat-dataset';
+import { DcatDataset, getDownloadUrl, getOgcUrl, hasGeometryType, isFeatureLayer, supportsWFS, supportsWMS } from './dcat-dataset';
 import alpha2ToAlpha3Langs from './languages';
+import * as _ from 'lodash';
+import { adlib, TransformsList } from 'adlib';
 
 /**
  * Takes a locale (e.g. "en-us") and returns an
@@ -11,39 +13,37 @@ export function localeToLang(locale: string) {
   return alpha2ToAlpha3Langs[locale.split('-')[0]];
 }
 
+export type DatasetFormatTemplate = Record<string, any>;
+
 /**
  * Formats a single dataset object as a 'dcat:Dataset'
  */
-export function formatDcatDataset(dataset: DcatDataset) {
-  const dcatDataset = {
-    '@type': 'dcat:Dataset',
-    '@id': dataset.landingPage,
-    'dct:title': dataset.title,
-    'dct:description': dataset.description,
-    'dcat:contactPoint': {
-      '@id': dataset.ownerUri,
-      '@type': 'Contact',
-      'vcard:fn': dataset.owner,
-      'vcard:hasEmail': dataset.orgContactUrl,
+export function formatDcatDataset(dcatDataset: DcatDataset, template: DatasetFormatTemplate) {
+  const transforms: TransformsList = {
+    toISO (_key, val) {
+      return new Date(val).toISOString();
     },
-    'dct:publisher': dataset.orgTitle,
-    'dcat:theme': 'geospatial', // TODO update this to use this vocabulary http://publications.europa.eu/resource/authority/data-theme
-    'dct:accessRights': 'public',
-    'dct:identifier': dataset.landingPage,
-    'dct:language': null,
-    'dcat:keyword': dataset.keyword,
-    'dct:provenance': dataset.provenance, // won't be available if not INSPIRE metadata
-    'dct:issued': dataset.issuedDateTime,
-    'dcat:distribution': generateDistributions(dataset),
+    toArray (_key, val) {
+      if (!val) return [];
+      else return _.castArray(val);
+    }
   };
 
-  if (dataset.language) {
-    dcatDataset['dct:language'] = {
-      '@id': `lang:${dataset.language.toUpperCase()}`,
+  const formattedDataset = adlib(template, dcatDataset, transforms);
+
+  formattedDataset['dcat:distribution'] = generateDistributions(dcatDataset); // wait, why is this 'dcat' when all other props use 'dct'?
+
+  if (dcatDataset.language) {
+    formattedDataset['dct:language'] = {
+      '@id': `lang:${dcatDataset.language.toUpperCase()}`,
     };
   }
 
-  return indent(JSON.stringify(dcatDataset, null, '\t'), 2);
+  if (!dcatDataset.provenance) {
+    formattedDataset['dct:provenance'] = null;
+  }
+
+  return indent(JSON.stringify(formattedDataset, null, '\t'), 2);
 }
 
 export interface ICatalogOptions {
@@ -107,21 +107,21 @@ function generateDistributions(dataset: DcatDataset) {
   distributionFns.push(getHubLandingPageDistribution);
   distributionFns.push(getEsriRESTDistribution);
 
-  if (dataset.isFeatureLayer) {
+  if (isFeatureLayer(dataset)) {
     distributionFns.push(getGeoJSONDistribution);
     distributionFns.push(getCSVDistribution);
   }
 
-  if (dataset.supportsWFS) {
+  if (supportsWFS(dataset)) {
     distributionFns.push(getOGCWFSDistribution);
   }
 
-  if (dataset.isFeatureLayer && dataset.hasGeometryType) {
+  if (isFeatureLayer(dataset) && hasGeometryType(dataset)) {
     distributionFns.push(getKMLDistribution);
     distributionFns.push(getShapefileDistribution);
   }
 
-  if (dataset.supportsWMS) {
+  if (supportsWMS(dataset)) {
     distributionFns.push(getOGCWMSDistribution);
   }
 
@@ -164,7 +164,7 @@ function getEsriRESTDistribution(dataset: DcatDataset) {
 function getGeoJSONDistribution(dataset: DcatDataset) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getDownloadUrl('geojson'),
+    'dcat:accessUrl': getDownloadUrl(dataset, 'geojson'),
     'dct:format': {
       '@id': 'ftype:GEOJSON',
     },
@@ -179,7 +179,7 @@ function getGeoJSONDistribution(dataset: DcatDataset) {
 function getCSVDistribution(dataset: DcatDataset) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getDownloadUrl('csv'),
+    'dcat:accessUrl': getDownloadUrl(dataset, 'csv'),
     'dct:format': {
       '@id': 'ftype:CSV',
     },
@@ -194,7 +194,7 @@ function getCSVDistribution(dataset: DcatDataset) {
 function getKMLDistribution(dataset: DcatDataset) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getDownloadUrl('kml'),
+    'dcat:accessUrl': getDownloadUrl(dataset, 'kml'),
     'dct:format': {
       '@id': 'ftype:KML',
     },
@@ -209,7 +209,7 @@ function getKMLDistribution(dataset: DcatDataset) {
 function getShapefileDistribution(dataset: DcatDataset) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getDownloadUrl('zip'),
+    'dcat:accessUrl': getDownloadUrl(dataset, 'zip'),
     'dct:format': {
       '@id': 'ftype:ZIP',
     },
@@ -224,7 +224,7 @@ function getShapefileDistribution(dataset: DcatDataset) {
 function getOGCWMSDistribution(dataset: DcatDataset) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getOgcUrl('WMS'),
+    'dcat:accessUrl': getOgcUrl(dataset, 'WMS'),
     'dct:format': {
       '@id': 'ftype:WMS_SRVC',
     },
@@ -239,7 +239,7 @@ function getOGCWMSDistribution(dataset: DcatDataset) {
 function getOGCWFSDistribution(dataset: DcatDataset) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getOgcUrl('WFS'),
+    'dcat:accessUrl': getOgcUrl(dataset, 'WFS'),
     'dct:format': {
       '@id': 'ftype:WFS_SRVC',
     },

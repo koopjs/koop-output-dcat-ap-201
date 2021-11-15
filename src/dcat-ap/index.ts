@@ -1,13 +1,14 @@
 import { IItem } from '@esri/arcgis-rest-portal';
 import { IDomainEntry } from '@esri/hub-common';
-import { DcatDataset as Dataset } from './dcat-dataset';
-import { formatDcatCatalog, formatDcatDataset } from './dcat-formatters';
+import { getDcatDataset } from './dcat-dataset';
+import { DatasetFormatTemplate, formatDcatCatalog, formatDcatDataset } from './dcat-formatters';
 import { FeedFormatterStream } from './feed-formatter-stream';
 
 interface IDcatAPOptions {
   siteItem: IItem;
   domainRecord: IDomainEntry,
   orgBaseUrl: string;
+  datasetFormatTemplate: DatasetFormatTemplate
 }
 
 export function getDataStreamDcatAp201(options: IDcatAPOptions) {
@@ -21,13 +22,8 @@ export function getDataStreamDcatAp201(options: IDcatAPOptions) {
   const footer = '\n\t]\n}';
 
   const formatFn = (chunk) => {
-    const dataset = new Dataset(
-      chunk,
-      options.orgBaseUrl,
-      options.domainRecord.orgTitle,
-      options.siteItem.url,
-    );
-    return formatDcatDataset(dataset);
+    const dcatDataset = getDcatDataset(chunk, options.orgBaseUrl, options.domainRecord.orgTitle, options.siteItem.url);
+    return formatDcatDataset(dcatDataset, options.datasetFormatTemplate);
   };
 
   return new FeedFormatterStream(header, footer, ',\n', formatFn);
