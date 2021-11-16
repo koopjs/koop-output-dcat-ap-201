@@ -4,7 +4,8 @@ import * as _ from 'lodash';
 import { isPage } from '@esri/hub-sites';
 import { UserSession } from '@esri/arcgis-rest-auth';
 
-export const requiredFields = [
+// Required fields from the API
+export const defaultRequiredFields = [
   'id',
   'url',
   'owner',
@@ -21,103 +22,64 @@ export const requiredFields = [
   'orgContactEmail'
 ];
 
-export class DcatDataset {
-  private _dto: any;
-  private _orgBaseUrl: string;
-  private _orgTitle: string;
-  private _siteUrl: string;
+// Fields calculated from API Values
+export const defaultCalculatedFields = [
+  'landingPage',
+  'ownerUri',
+  'language',
+  'keyword',
+  'issuedDateTime',
+  'orgTitle',
+  'provenance'
+];
 
-  constructor (dto: any, orgBaseUrl: string, orgTitle: string, siteUrl: string) {
-    this._dto = dto;
-    this._orgBaseUrl = orgBaseUrl;
-    this._orgTitle = orgTitle;
-    this._siteUrl = siteUrl;
-  }
+export function getDcatDataset(hubDataset: any, orgBaseUrl: string, orgTitle: string, siteUrl: string) {
+  return Object.assign({}, hubDataset, {
+    landingPage: `${siteUrl}/datasets/${hubDataset.id}`,
+    ownerUri: getUserUrl({
+        portal: `${orgBaseUrl}/sharing/rest`,
+        username: hubDataset.owner
+      } as UserSession) + '?f=json',
+    language: _.get(hubDataset, 'metadata.metadata.dataIdInfo.dataLang.languageCode.@_value') || localeToLang(hubDataset.culture) || '',
+    keyword: getDatasetKeyword(hubDataset),
+    issuedDateTime: _.get(hubDataset, 'metadata.metadata.dataIdInfo.idCitation.date.pubDate') || new Date(hubDataset.created).toISOString(),
+    orgTitle,
+    provenance: _.get(hubDataset, 'metadata.metadata.dataIdInfo.idCredit', ''),
+  });
+}
 
-  /**
-    * Lookup fn
-    */
-  private _get (path) {
-    return _.get(this._dto, path, null);
-  }
-
-  get id (): string { return this._get('id'); }
-  get url (): string { return this._get('url'); }
-  get landingPage (): string { return `${this._siteUrl}/datasets/${this.id}`; }
-  get title (): string { return this._get('name'); }
-  get description (): string { return this._get('description'); }
-  get owner (): string { return this._get('owner'); }
-  get ownerUri (): string {
-    return getUserUrl({
-      portal: `${this._orgBaseUrl}/sharing/rest`,
-      username: this.owner
-    } as UserSession) + '?f=json';
-  }
-
-  get language (): string {
-    return this._metaLanguage || localeToLang(this._get('culture')) || null;
-  }
-
-  get keyword (): string[] {
-    if (this._metaKeyword) {
-      return this._metaKeyword;
+function getDatasetKeyword(dataset: any) {
+    const metaKeyword = _.get(dataset, 'metadata.metadata.dataIdInfo.searchKeys.keyword');
+    
+    if (metaKeyword) {
+      return metaKeyword;
     }
 
-    let tags = this._get('tags');
-
+    const { tags, type, typeKeywords } = dataset;
     const hasNoTags = !tags || tags.length === 0 || !tags[0]; // if tags is undefined, the tags array is empty, or tags is an empty string
-    if (isPage({
-      type: this._dto.type,
-      typeKeywords: this._dto.typeKeywords
-    } as IItem) && hasNoTags) {
-      tags = ['ArcGIS Hub page'];
+    
+    if (isPage({ type, typeKeywords } as IItem) && hasNoTags) {
+      return ['ArcGIS Hub page'];
     }
 
     return tags;
-  }
-
-  /**
-    * Returns an ISO string
-    */
-  get issuedDateTime (): string {
-    return this._metaPubDate || new Date(this._get('created')).toISOString();
-  }
-
-  get isFeatureLayer (): boolean { return /_/.test(this.id); }
-  get hasGeometryType (): boolean { return !!this._get('geometryType'); }
-  private get _supportedExtensions () { return _.get(this._dto, 'supportedExtensions'); }
-  get supportsWFS (): boolean { return this._supportedExtensions && this._supportedExtensions.includes('WFSServer'); }
-  get supportsWMS (): boolean { return this._supportedExtensions && this._supportedExtensions.includes('WMSServer'); }
-
-  get orgTitle (): string { return this._orgTitle; }
-
-  // TODO - add to search API
-  get orgContactUrl (): string { return this._get('orgContactEmail'); }
-
-  /* BEGIN INSPIRE METADATA PROPS (may want to introduce a metadata class to manage formats eventually) */
-
-  get provenance (): string { return this._get('metadata.metadata.dataIdInfo.idCredit'); }
-  private get _metaKeyword (): string[] { return this._get('metadata.metadata.dataIdInfo.searchKeys.keyword'); }
-  private get _metaLanguage (): string { return this._get('metadata.metadata.dataIdInfo.dataLang.languageCode.@_value'); }
-  private get _metaPubDate (): string { return this._get('metadata.metadata.dataIdInfo.idCitation.date.pubDate'); }
-
-  /* BEGIN METHODS */
-
-  getDownloadUrl (format: 'geojson'|'kml'|'csv'|'zip') {
-    // get spatial reference
-    const spatialReference = this._get('server.spatialReference');
-    let queryStr = '';
-    if (spatialReference) {
-      const { latestWkid, wkid } = spatialReference;
-      if (wkid) {
-        const outSR = JSON.stringify({ latestWkid, wkid });
-        queryStr = `?outSR=${encodeURIComponent(outSR)}`;
-      }
-    }
-    return `${this.landingPage}.${format}${queryStr}`;
-  }
-
-  getOgcUrl (type: 'WMS'|'WFS' = 'WMS') {
-    return this.url.replace(/rest\/services/i, 'services').replace(/\d+$/, `${type}Server?request=GetCapabilities&service=${type}`);
-  }
 }
+
+// TODO: Should we test these individually?
+export const isFeatureLayer = (dcatDataset: any) => /_/.test(dcatDataset.id);
+export const hasGeometryType = (dcatDataset: any) => !!dcatDataset.geometryType;
+export const supportsWFS = (dcatDataset: any) => _.get(dcatDataset, 'supportedExtensions', []).includes('WFSServer');
+export const supportsWMS = (dcatDataset: any) => _.get(dcatDataset, 'supportedExtensions', []).includes(('WMSServer'));
+export const getDownloadUrl = (dcatDataset: any, format: 'geojson'|'kml'|'csv'|'zip') => {
+  const spatialReference = _.get(dcatDataset, 'server.spatialReference');
+  let queryStr = '';
+  if (spatialReference) {
+    const { latestWkid, wkid } = spatialReference;
+    if (wkid) {
+      const outSR = JSON.stringify({ latestWkid, wkid });
+      queryStr = `?outSR=${encodeURIComponent(outSR)}`;
+    }
+  }
+  return `${dcatDataset.landingPage}.${format}${queryStr}`;
+};
+export const getOgcUrl = (dcatDataset: any, type: 'WMS'|'WFS' = 'WMS') => dcatDataset.url.replace(/rest\/services/i, 'services').replace(/\d+$/, `${type}Server?request=GetCapabilities&service=${type}`);

@@ -14,7 +14,6 @@ import { IContentSearchRequest } from '@esri/hub-search';
 
 import { version } from '../package.json';
 import { getDataStreamDcatAp201 } from './dcat-ap';
-import { requiredFields } from './dcat-ap/dcat-dataset';
 
 const portalUrl = config.has('arcgisPortal')
   ? (config.get('arcgisPortal') as string)
@@ -25,6 +24,11 @@ if (/devext\.|mapsdev\./.test(portalUrl)) {
   env = 'dev';
 } else if (/qaext\.|mapsqa\./.test(portalUrl)) {
   env = 'qa';
+}
+
+function getApiTermsFromDependencies (dependencies: string[]) {
+  // Hub API only supports scoping by top-level terms
+  return Array.from(new Set(dependencies.map(dep => dep.split('.')[0])));
 }
 
 export = class OutputDcatAp201 {
@@ -55,16 +59,21 @@ export = class OutputDcatAp201 {
         env === 'prod' ? '' : env
       }.arcgis.com`;
 
-      const dcatStream = getDataStreamDcatAp201({
+      const customFormatTemplate = _.get(siteModel, 'data.feeds.dcatAP201');
+      
+      const { dcatStream, dependencies } = getDataStreamDcatAp201({
         domainRecord,
         siteItem: siteModel.item,
         orgBaseUrl,
+        customFormatTemplate
       });
-
+      
+      const apiTerms = getApiTermsFromDependencies(dependencies);
+      
       req.res.locals.searchRequest = this.getSearchRequest(
         siteCatalog,
         portalUrl,
-        requiredFields
+        apiTerms
       );
 
       const datasetStream = await this.model.pullStream(req);

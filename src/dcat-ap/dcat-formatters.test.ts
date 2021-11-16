@@ -1,38 +1,35 @@
-import { DcatDataset } from './dcat-dataset';
 import { formatDcatDataset } from './dcat-formatters';
+import { defaultFormatTemplate }  from '../default-format-template';
 
-const dataset = {
-  landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/',
-  title: 'Jules Goes The Distance',
+const dataset: any = {
+  landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0',
+  id: '0',
+  name: 'Jules Goes The Distance',
   description:
     'Create your own initiative by combining existing applications with a custom site. Use this initiative to form teams around a problem and invite your community to participate.',
   ownerUri: '',
   owner: 'jbartley',
-  orgContactUrl: 'contact@funorg.com',
+  orgContactEmail: 'contact@funorg.com',
   orgTitle: '',
   language: 'eng',
   keyword: ['property', 'vacant', 'abandoned', 'revitalization'],
-  metaProvenance: '',
+  provenance: 'provenance',
   issuedDateTime: 1498771743000,
   url: 'https://sampleserver3.arcgisonline.com/arcgis/rest/services/Earthquakes/RecentEarthquakesRendered/MapServer/0',
-  getDownloadUrl() {
-    return 'foobar-url.com';
-  },
-  getOgcUrl: () => 'foobar-url.com',
-} as unknown as DcatDataset;
+};
 
 describe('formatDcatDataset', () => {
   it('DCAT dataset has correct format', function () {
     const expectedResult = {
       '@type': 'dcat:Dataset',
       '@id': dataset.landingPage,
-      'dct:title': dataset.title,
+      'dct:title': dataset.name,
       'dct:description': dataset.description,
       'dcat:contactPoint': {
         '@id': dataset.ownerUri,
         '@type': 'Contact',
         'vcard:fn': dataset.owner,
-        'vcard:hasEmail': dataset.orgContactUrl,
+        'vcard:hasEmail': dataset.orgContactEmail,
       },
       'dct:publisher': dataset.orgTitle,
       'dcat:theme': 'geospatial',
@@ -45,7 +42,7 @@ describe('formatDcatDataset', () => {
       'dct:provenance': dataset.provenance,
       'dct:issued': dataset.issuedDateTime,
     };
-    const result = JSON.parse(formatDcatDataset(dataset));
+    const result = JSON.parse(formatDcatDataset(dataset, defaultFormatTemplate));
 
     expect(result['@type']).toBe(expectedResult['@type']);
     expect(result['@id']).toBe(expectedResult['@id']);
@@ -57,7 +54,7 @@ describe('formatDcatDataset', () => {
     expect(result['dct:publisher']).toBe(expectedResult['dct:publisher']);
     expect(result['dcat:theme']).toBe(expectedResult['dcat:theme']);
     expect(result['dct:accessRights']).toBe(expectedResult['dct:accessRights']);
-    expect(result['dct:indentifier']).toBe(expectedResult['dct:indentifier']);
+    expect(result['dct:identifier']).toBe(expectedResult['dct:identifier']);
     expect(result['dct:language']).toEqual(expectedResult['dct:language']);
     expect(result['dcat:keyword']).toEqual(expectedResult['dcat:keyword']);
     expect(result['dct:provenance']).toBe(expectedResult['dct:provenance']);
@@ -65,26 +62,26 @@ describe('formatDcatDataset', () => {
     expect(result['dcat:distribution']).toBeTruthy();
   });
 
-  it('DCAT language node null if no language', function () {
-    const withoutLanguage = { ...dataset, language: '' } as DcatDataset;
-    const result = JSON.parse(formatDcatDataset(withoutLanguage));
+  it('DCAT language node empty if no language', function () {
+    const withoutLanguage = { ...dataset, language: null };
+    const result = JSON.parse(formatDcatDataset(withoutLanguage, defaultFormatTemplate));
 
-    expect(result['dct:language']).toBe(null);
+    expect(result['dct:language']).toBe('');
   });
 
   it('DCAT distributions have correct format', function () {
     const distDataset = {
       ...dataset,
-      isFeatureLayer: true,
-      hasGeometryType: true,
-      supportsWFS: true,
-      supportsWMS: true,
-    } as DcatDataset;
+      landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0',
+      id: '0_0',
+      geometryType: 'point',
+      supportedExtensions: ['WFSServer', 'WMSServer']
+    };
     const expectedResult = {
       html: {
         '@type': 'dcat:Distribution',
         'dcat:accessUrl':
-          'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/',
+          'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0',
         'dct:format': {
           '@id': 'ftype:HTML',
         },
@@ -103,7 +100,7 @@ describe('formatDcatDataset', () => {
       },
       geoJSON: {
         '@type': 'dcat:Distribution',
-        'dcat:accessUrl': 'foobar-url.com',
+        'dcat:accessUrl': 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0.geojson',
         'dct:format': {
           '@id': 'ftype:GEOJSON',
         },
@@ -112,7 +109,7 @@ describe('formatDcatDataset', () => {
       },
       csv: {
         '@type': 'dcat:Distribution',
-        'dcat:accessUrl': 'foobar-url.com',
+        'dcat:accessUrl': 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0.csv',
         'dct:format': {
           '@id': 'ftype:CSV',
         },
@@ -121,7 +118,7 @@ describe('formatDcatDataset', () => {
       },
       wfs: {
         '@type': 'dcat:Distribution',
-        'dcat:accessUrl': 'foobar-url.com',
+        'dcat:accessUrl': 'https://sampleserver3.arcgisonline.com/arcgis/services/Earthquakes/RecentEarthquakesRendered/MapServer/WFSServer?request=GetCapabilities&service=WFS',
         'dct:format': {
           '@id': 'ftype:WFS_SRVC',
         },
@@ -130,7 +127,7 @@ describe('formatDcatDataset', () => {
       },
       kml: {
         '@type': 'dcat:Distribution',
-        'dcat:accessUrl': 'foobar-url.com',
+        'dcat:accessUrl': 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0.kml',
         'dct:format': {
           '@id': 'ftype:KML',
         },
@@ -139,7 +136,7 @@ describe('formatDcatDataset', () => {
       },
       zip: {
         '@type': 'dcat:Distribution',
-        'dcat:accessUrl': 'foobar-url.com',
+        'dcat:accessUrl': 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0.zip',
         'dct:format': {
           '@id': 'ftype:ZIP',
         },
@@ -148,7 +145,7 @@ describe('formatDcatDataset', () => {
       },
       wms: {
         '@type': 'dcat:Distribution',
-        'dcat:accessUrl': 'foobar-url.com',
+        'dcat:accessUrl': 'https://sampleserver3.arcgisonline.com/arcgis/services/Earthquakes/RecentEarthquakesRendered/MapServer/WMSServer?request=GetCapabilities&service=WMS',
         'dct:format': {
           '@id': 'ftype:WMS_SRVC',
         },
@@ -156,7 +153,7 @@ describe('formatDcatDataset', () => {
         'dct:title': 'OGC WMS',
       },
     };
-    const result = JSON.parse(formatDcatDataset(distDataset));
+    const result = JSON.parse(formatDcatDataset(distDataset, defaultFormatTemplate));
     expect(result['dcat:distribution'][0]).toEqual(expectedResult.html);
     expect(result['dcat:distribution'][1]).toEqual(expectedResult.restAPI);
     expect(result['dcat:distribution'][2]).toEqual(expectedResult.geoJSON);
@@ -168,7 +165,7 @@ describe('formatDcatDataset', () => {
   });
 
   it('basic DCAT distributions are generated', function () {
-    const result = JSON.parse(formatDcatDataset(dataset));
+    const result = JSON.parse(formatDcatDataset(dataset, defaultFormatTemplate));
     const dist1 = result['dcat:distribution'][0]['dct:title'];
     const dist2 = result['dcat:distribution'][1]['dct:title'];
 
@@ -180,9 +177,9 @@ describe('formatDcatDataset', () => {
   it('FeatureLayer DCAT distributions are generated', function () {
     const featureLayerDataset = {
       ...dataset,
-      isFeatureLayer: true,
-    } as DcatDataset;
-    const result = JSON.parse(formatDcatDataset(featureLayerDataset));
+      id: '0_0',
+    };
+    const result = JSON.parse(formatDcatDataset(featureLayerDataset, defaultFormatTemplate));
     const dist1 = result['dcat:distribution'][2]['dct:title'];
     const dist2 = result['dcat:distribution'][3]['dct:title'];
 
@@ -196,8 +193,10 @@ describe('formatDcatDataset', () => {
       ...dataset,
       isFeatureLayer: true,
       hasGeometryType: true,
-    } as DcatDataset;
-    const result = JSON.parse(formatDcatDataset(featureLayerDataset));
+      id: '0_0',
+      geometryType: 'point',
+    };
+    const result = JSON.parse(formatDcatDataset(featureLayerDataset, defaultFormatTemplate));
     const dist1 = result['dcat:distribution'][4]['dct:title'];
     const dist2 = result['dcat:distribution'][5]['dct:title'];
 
@@ -207,8 +206,11 @@ describe('formatDcatDataset', () => {
   });
 
   it('DCAT distributions include WFS when supported', function () {
-    const WFSDataset = { ...dataset, supportsWFS: true } as DcatDataset;
-    const result = JSON.parse(formatDcatDataset(WFSDataset));
+    const WFSDataset = { 
+      ...dataset,
+      supportedExtensions: ['WFSServer']
+    };
+    const result = JSON.parse(formatDcatDataset(WFSDataset, defaultFormatTemplate));
     const dist = result['dcat:distribution'][2]['dct:title'];
 
     expect(dist).toBeTruthy();
@@ -216,8 +218,11 @@ describe('formatDcatDataset', () => {
   });
 
   it('DCAT distributions include WMS when supported', function () {
-    const WMSDataset = { ...dataset, supportsWMS: true } as DcatDataset;
-    const result = JSON.parse(formatDcatDataset(WMSDataset));
+    const WMSDataset = { 
+      ...dataset,
+      supportedExtensions: ['WMSServer']
+    };
+    const result = JSON.parse(formatDcatDataset(WMSDataset, defaultFormatTemplate));
     const dist = result['dcat:distribution'][2]['dct:title'];
 
     expect(dist).toBeTruthy();

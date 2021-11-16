@@ -1,25 +1,24 @@
 import { IItem } from '@esri/arcgis-rest-portal';
 import {
   cloneObject,
-  deleteProp,
-  getProp,
   IDomainEntry,
 } from '@esri/hub-common';
 import { readableFromArray, streamToString } from '../test-helpers/stream-utils';
 import { getDataStreamDcatAp201 } from './';
 import * as datasetFromApi from '../test-helpers/mock-dataset.json';
 
-function generateDcatFeed(
+async function generateDcatFeed(
   domainRecord,
   siteItem,
   datasets,
-  orgBaseUrl = 'https://qa-pre-a-hub.mapsqa.arcgis.com'
+  orgBaseUrl = 'https://qa-pre-a-hub.mapsqa.arcgis.com',
+  customFormatTemplate?
 ) {
-  const dcatStream = getDataStreamDcatAp201({ domainRecord, siteItem, orgBaseUrl });
+  const { dcatStream, dependencies } = getDataStreamDcatAp201({ domainRecord, siteItem, orgBaseUrl, customFormatTemplate });
 
   const docStream = readableFromArray(datasets); // no datasets since we're just checking the catalog
-
-  return streamToString(docStream.pipe(dcatStream)).then(JSON.parse);
+  const feedString = await streamToString(docStream.pipe(dcatStream));
+  return { feed: JSON.parse(feedString), dependencies };
 }
 
 const domainRecord: IDomainEntry = {
@@ -111,7 +110,7 @@ const siteItem: IItem = {
 
 describe('generating DCAT-AP 2.0.1 feed', () => {
   it('DCAT catalog formatted correctly', async function () {
-    const feed = await generateDcatFeed(domainRecord, siteItem, []);
+    const { feed } = await generateDcatFeed(domainRecord, siteItem, []);
 
     expect(feed['@context']).toEqual({
       dcat: 'http://www.w3.org/ns/dcat#',
@@ -143,7 +142,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
   });
 
   it('DCAT dataset prefers metadata when available', async function () {
-    const feed = await generateDcatFeed(domainRecord, siteItem, [
+    const { feed } = await generateDcatFeed(domainRecord, siteItem, [
       datasetFromApi,
     ]);
 
@@ -171,7 +170,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const datasetWithoutMetadata = cloneObject(datasetFromApi);
     delete datasetWithoutMetadata.metadata;
 
-    const feed = await generateDcatFeed(domainRecord, siteItem, [
+    const { feed } = await generateDcatFeed(domainRecord, siteItem, [
       datasetWithoutMetadata,
     ]);
 
@@ -182,8 +181,6 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
       'just modified'
     ]);
 
-    expect(chk1['dct:provenance']).toBe(null);
-
     expect(chk1['dct:issued']).toBe('2021-01-29T15:34:38.000Z');
 
     expect(chk1['dct:language']).toEqual({
@@ -191,38 +188,8 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     });
   });
 
-  it('DCAT dataset attributes default to null where values not available', async function () {
-    // define a few mappings to check
-    const mappings = [
-      // TODO - reactivate when org contact is available
-      // [
-      //   'org.portalProperties.links.contactUs.url',
-      //   'dcat:contactPoint.vcard:hasEmail',
-      // ],
-      ['metadata.metadata.dataIdInfo.idCredit', 'dct:provenance'],
-      ['name', 'dct:title'],
-    ];
-
-    const partialDataset = cloneObject(datasetFromApi);
-
-    // remove props
-    for (const mapping of mappings) {
-      deleteProp(partialDataset, mapping[0]);
-    }
-
-    const feed = await generateDcatFeed(domainRecord, siteItem, [
-      partialDataset,
-    ]);
-
-    const dcatDataset = feed['dcat:dataset'][0];
-
-    for (const mapping of mappings) {
-      expect(getProp(dcatDataset, mapping[1])).toBe(null);
-    }
-  });
-
   it('DCAT feed uses org base URL', async function () {
-    const feedProd = await generateDcatFeed(
+    const { feed: feedProd } = await generateDcatFeed(
       domainRecord,
       siteItem,
       [datasetFromApi],
@@ -234,5 +201,143 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     expect(
       new URL(feedProd['dcat:dataset'][0]['dcat:contactPoint']['@id']).hostname,
     ).toBe('qa-pre-a-hub.mapsdev.arcgis.com');
+  });
+
+  it('respects dcat customizations of overwritable attributes', async () => {
+    const { feed } = await generateDcatFeed(
+      domainRecord, 
+      siteItem, 
+      [ datasetFromApi ],
+      'https://qa-pre-a-hub.mapsqa.arcgis.com',
+      {
+        'dct:title': 'A Nifty Title', // overwrite existing
+        'dct:new-attr': 'New Value', // new attribute
+      } 
+    );
+
+    const chk1 = feed['dcat:dataset'][0];
+
+    expect(chk1['@type']).toEqual('dcat:Dataset');
+    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dct:title']).toEqual('A Nifty Title');
+    expect(chk1['dct:description']).toEqual('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>');
+    expect(chk1['dcat:contactPoint']).toStrictEqual({
+      '@id': 'https://qa-pre-a-hub.mapsqa.arcgis.com/sharing/rest/community/users/thervey_qa_pre_a_hub?f=json',
+      '@type': 'Contact',
+      'vcard:fn': 'thervey_qa_pre_a_hub',
+      'vcard:hasEmail': 'mailto:email@service.com',
+    });
+    expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
+    expect(chk1['dcat:theme']).toEqual('geospatial');
+    expect(chk1['dct:accessRights']).toEqual('public');
+    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
+    expect(chk1['dct:provenance']).toEqual('Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)');
+    expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
+    expect(chk1['dct:language']).toStrictEqual({ '@id': 'lang:GER' });
+    expect(chk1['dct:new-attr']).toEqual('New Value');
+  });
+
+  it('scrubs dcat customization of protected fields', async () => {
+    const { feed } = await generateDcatFeed(
+      domainRecord, 
+      siteItem, 
+      [datasetFromApi],
+      'https://qa-pre-a-hub.mapsqa.arcgis.com',
+      {
+        '@type': '{{ Type Injection }}',
+        '@id': '{{ Id Injection }}',
+        'dcat:contactPoint': {
+          '@id': '{{ Contact Point Id Injection }}',
+          '@type': '{{ Contact Point Type Injection }}',
+          "vcard:fn": "{{ owner}}", // default value
+          "vcard:hasEmail": "{{ orgContactEmail }}", // default value
+        },
+        'dcat:theme': '{{ Theme Injection }}',
+        'dct:identifier': '{{ Identifier Injection}}',
+        'dcat:keyword': '{{ Keyword Injection }}',
+        'dct:issued': '{{ Issued Injection}}',
+        'dct:language': '{{ Language Injection }}',
+        'dcat:distribution': '{{ Distribution Injection }}',
+      }
+    );
+
+    const chk1 = feed['dcat:dataset'][0];
+
+    expect(chk1['@type']).toEqual('dcat:Dataset');
+    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dct:title']).toEqual('Tahoe places of interest');
+    expect(chk1['dct:description']).toEqual('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>');
+    expect(chk1['dcat:contactPoint']).toStrictEqual({
+      '@id': 'https://qa-pre-a-hub.mapsqa.arcgis.com/sharing/rest/community/users/thervey_qa_pre_a_hub?f=json',
+      '@type': 'Contact',
+      'vcard:fn': 'thervey_qa_pre_a_hub',
+      'vcard:hasEmail': 'mailto:email@service.com',
+    });
+    expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
+    expect(chk1['dcat:theme']).toEqual('geospatial');
+    expect(chk1['dct:accessRights']).toEqual('public');
+    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
+    expect(chk1['dct:provenance']).toEqual('Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)');
+    expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
+    expect(chk1['dct:language']).toStrictEqual({ '@id': 'lang:GER' });
+  });
+
+  it('reports default dependencies when no custom format provided', async () => {
+    const expected = [
+      'id',
+      'url',
+      'owner',
+      'name',
+      'type',
+      'typeKeywords',
+      'tags',
+      'description',
+      'culture',
+      'created',
+      'metadata',
+      'server',
+      'geometryType',
+      'orgContactEmail'
+    ];
+    const { dependencies } = await generateDcatFeed(domainRecord, siteItem, [datasetFromApi]);
+    
+    expect(dependencies).toEqual(expect.arrayContaining(expected));
+    expect(dependencies.length).toBe(expected.length);
+  });
+
+  it('reports custom dependencies when custom format provided', async () => {
+    const expected = [
+      'id',
+      'url',
+      'owner',
+      'name',
+      'type',
+      'typeKeywords',
+      'tags',
+      'description',
+      'culture',
+      'created',
+      'metadata',
+      'server',
+      'geometryType',
+      'orgContactEmail',
+      'modified.property.path',
+      'new.property.path'
+    ];
+    const { dependencies } = await generateDcatFeed(
+      domainRecord, 
+      siteItem, 
+      [datasetFromApi],
+      'https://qa-pre-a-hub.mapsqa.arcgis.com',
+      { 
+        'dct:title': '{{modified.property.path}}', // Modify default
+        property: '{{new.property.path}}' // Add new attribute
+      }
+    );
+    
+    expect(dependencies).toEqual(expect.arrayContaining(expected));
+    expect(dependencies.length).toBe(expected.length);
   });
 });
