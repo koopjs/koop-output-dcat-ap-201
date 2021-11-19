@@ -253,9 +253,12 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
           "vcard:fn": "{{ owner}}", // default value
           "vcard:hasEmail": "{{ orgContactEmail }}", // default value
         },
+        'dct:publisher': '{{ Publisher Injection }}',
         'dcat:theme': '{{ Theme Injection }}',
+        'dct:accessRights': '{{ Access Rights Injection }}',
         'dct:identifier': '{{ Identifier Injection}}',
         'dcat:keyword': '{{ Keyword Injection }}',
+        'dct:provenance': '{{ Provenance Injection }}',
         'dct:issued': '{{ Issued Injection}}',
         'dct:language': '{{ Language Injection }}',
         'dcat:distribution': '{{ Distribution Injection }}',

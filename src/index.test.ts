@@ -225,9 +225,6 @@ describe('Output Plugin', () => {
               'vcard:fn': '{{owner}}',
               'vcard:hasEmail': '{{orgContactEmail}}',
           },
-          'dct:publisher': '{{orgTitle}}',
-          'dct:accessRights': 'public',
-          'dct:provenance': '{{provenance}}',
           'dct:newAttribute': '{{path.to.attribute}}'
         }
       }

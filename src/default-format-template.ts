@@ -11,12 +11,12 @@ export const defaultFormatTemplate: DatasetFormatTemplate = {
         'vcard:fn': '{{owner}}',
         'vcard:hasEmail': '{{orgContactEmail}}',
     },
-    'dct:publisher': '{{orgTitle}}',
+    'dct:publisher': '{{orgTitle}}', // can't be overwritten
     'dcat:theme': 'geospatial', // can't be overwritten. TODO: update this to use this vocabulary http://publications.europa.eu/resource/authority/data-theme
-    'dct:accessRights': 'public',
+    'dct:accessRights': 'public', // can't be overwritten
     'dct:identifier': '{{landingPage}}', // can't be overwritten
     'dcat:keyword': '{{keyword}}', // can't be overwritten
-    'dct:provenance': '{{provenance}}', // won't be available if not INSPIRE metadata
+    'dct:provenance': '{{provenance}}', // can't be overwritten. won't be available if not INSPIRE metadata
     'dct:issued': '{{issuedDateTime}}', // can't be overwritten
     'dct:language': '', // can't be overwritten, object computed at runtime 
 };

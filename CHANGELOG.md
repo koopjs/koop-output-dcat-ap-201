@@ -1,12 +1,19 @@
 # CHANGELOG.md
 
+## Unreleased
+
+Fixed
+- Scrub configurations that attempt to overwrite the 'dct:publisher', 'dct:provenance' and 'dct:accessRights' properties [#10](https://github.com/koopjs/koop-output-dcat-ap-201/pull/10)
+
 ## 1.2.0
+
 Added
-- support to use the custom template configuration found on the site's `data.feeds.dcatAP201` property
+- support to use the custom template configuration found on the site's `data.feeds.dcatAP201` property [#9](https://github.com/koopjs/koop-output-dcat-ap-201/pull/9)
 
 ## 1.1.0
+
 Added
-- `orgContactEmail` as property of feed [#8](https://github.com/koopjs/koop-output-dcat-ap-201/pull/4)
+- `orgContactEmail` as property of feed [#8](https://github.com/koopjs/koop-output-dcat-ap-201/pull/8)
 
 ## 1.0.1
 
