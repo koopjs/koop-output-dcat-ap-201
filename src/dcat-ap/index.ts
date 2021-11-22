@@ -1,13 +1,15 @@
 import { IItem } from '@esri/arcgis-rest-portal';
 import { IDomainEntry } from '@esri/hub-common';
-import { DcatDataset as Dataset } from './dcat-dataset';
-import { formatDcatCatalog, formatDcatDataset } from './dcat-formatters';
+import { defaultCalculatedFields, defaultRequiredFields, getDcatDataset } from './dcat-dataset';
+import { DatasetFormatTemplate, formatDcatCatalog, formatDcatDataset, mergeWithDefaultFormatTemplate } from './dcat-formatters';
 import { FeedFormatterStream } from './feed-formatter-stream';
+import { listDependencies } from 'adlib';
 
 interface IDcatAPOptions {
   siteItem: IItem;
   domainRecord: IDomainEntry,
   orgBaseUrl: string;
+  customFormatTemplate?: DatasetFormatTemplate
 }
 
 export function getDataStreamDcatAp201(options: IDcatAPOptions) {
@@ -19,16 +21,21 @@ export function getDataStreamDcatAp201(options: IDcatAPOptions) {
   )},\n\t"dcat:dataset": [\n`;
 
   const footer = '\n\t]\n}';
-
+  
+  const datasetFormatTemplate = mergeWithDefaultFormatTemplate(options.customFormatTemplate);
   const formatFn = (chunk) => {
-    const dataset = new Dataset(
-      chunk,
-      options.orgBaseUrl,
-      options.domainRecord.orgTitle,
-      options.siteItem.url,
-    );
-    return formatDcatDataset(dataset);
+    const dcatDataset = getDcatDataset(chunk, options.orgBaseUrl, options.domainRecord.orgTitle, options.siteItem.url);
+    return formatDcatDataset(dcatDataset, datasetFormatTemplate);
   };
 
-  return new FeedFormatterStream(header, footer, ',\n', formatFn);
+  return {
+    dcatStream: new FeedFormatterStream(header, footer, ',\n', formatFn),
+    dependencies: Array.from(
+      new Set([
+      ...defaultRequiredFields,
+      ...listDependencies(datasetFormatTemplate)
+          .filter(dependency => !defaultCalculatedFields.includes(dependency))
+      ])
+    )
+  };
 }

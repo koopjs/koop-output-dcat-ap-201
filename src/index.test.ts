@@ -8,7 +8,9 @@ import * as request from 'supertest';
 import * as mockDomainRecord from './test-helpers/mock-domain-record.json';
 import * as mockSiteModel from './test-helpers/mock-site-model.json';
 import * as mockDataset from './test-helpers/mock-dataset.json';
-import { IHubRequestOptions } from '@esri/hub-common';
+import { IHubRequestOptions, IModel } from '@esri/hub-common';
+import { FeedFormatterStream } from './dcat-ap/feed-formatter-stream';
+import * as _ from 'lodash';
 
 describe('Output Plugin', () => {
   let mockConfigModule;
@@ -20,7 +22,11 @@ describe('Output Plugin', () => {
   const siteHostName = 'download-test-qa-pre-a-hub.hubqa.arcgis.com';
 
   function buildPluginAndApp () {
-    const Output = require('./');
+    let Output;
+    
+    jest.isolateModules(() => {
+      Output = require('./');
+    });
 
     const plugin = new Output();
     plugin.model = {
@@ -192,5 +198,52 @@ describe('Output Plugin', () => {
       .expect(res => {
         expect(res.body).toEqual({});
       });
+  });
+
+  describe('feed configurations', () => {
+    let mockGetDataStreamDcatAp201;
+
+    beforeEach(() => {
+      const { getDataStreamDcatAp201 } = require('./dcat-ap');
+      jest.mock('./dcat-ap');
+      mockGetDataStreamDcatAp201 = mocked(getDataStreamDcatAp201)
+        .mockReturnValue({
+          dcatStream: new FeedFormatterStream('{', '}', '', () => ''),
+          dependencies: []
+        });
+    });
+
+    it("Properly passes a site's custom dcat configuration to getDataStreamAp201 when present", async () => {
+      [ plugin, app ] = buildPluginAndApp();
+
+      const customConfigSiteModel: IModel = _.cloneDeep(mockSiteModel);
+      customConfigSiteModel.data.feeds = {
+        dcatAP201: {
+          'dct:title': '{{name}}',
+          'dct:description': '{{description}}',
+          'dcat:contactPoint': {
+              'vcard:fn': '{{owner}}',
+              'vcard:hasEmail': '{{orgContactEmail}}',
+          },
+          'dct:newAttribute': '{{path.to.attribute}}'
+        }
+      }
+      mockGetSite.mockResolvedValue(customConfigSiteModel);
+
+      await request(app)
+        .get('/dcat')
+        .set('host', siteHostName)
+        .expect('Content-Type', /application\/json/)
+        .expect(200)
+        .expect(() => {
+          expect(mockGetDataStreamDcatAp201)
+            .toHaveBeenCalledWith({
+              domainRecord: mockDomainRecord,
+              siteItem: customConfigSiteModel.item,
+              orgBaseUrl: 'https://qa-pre-a-hub.maps.arcgis.com',
+              customFormatTemplate: customConfigSiteModel.data.feeds.dcatAP201
+            });
+        });
+    });
   });
 });

@@ -1,7 +1,10 @@
 import { IItem } from '@esri/arcgis-rest-portal';
 import { IDomainEntry } from '@esri/hub-common';
-import { DcatDataset } from './dcat-dataset';
+import { getDownloadUrl, getOgcUrl, hasGeometryType, isFeatureLayer, supportsWFS, supportsWMS } from './dcat-dataset';
 import alpha2ToAlpha3Langs from './languages';
+import * as _ from 'lodash';
+import { adlib, TransformsList } from 'adlib';
+import { defaultFormatTemplate } from '../default-format-template';
 
 /**
  * Takes a locale (e.g. "en-us") and returns an
@@ -11,39 +14,33 @@ export function localeToLang(locale: string) {
   return alpha2ToAlpha3Langs[locale.split('-')[0]];
 }
 
+export type DatasetFormatTemplate = Record<string, any>;
+
 /**
  * Formats a single dataset object as a 'dcat:Dataset'
  */
-export function formatDcatDataset(dataset: DcatDataset) {
-  const dcatDataset = {
-    '@type': 'dcat:Dataset',
-    '@id': dataset.landingPage,
-    'dct:title': dataset.title,
-    'dct:description': dataset.description,
-    'dcat:contactPoint': {
-      '@id': dataset.ownerUri,
-      '@type': 'Contact',
-      'vcard:fn': dataset.owner,
-      'vcard:hasEmail': dataset.orgContactUrl,
+export function formatDcatDataset(dcatDataset: any, template: DatasetFormatTemplate) {
+  const transforms: TransformsList = {
+    toISO (_key, val) {
+      return new Date(val).toISOString();
     },
-    'dct:publisher': dataset.orgTitle,
-    'dcat:theme': 'geospatial', // TODO update this to use this vocabulary http://publications.europa.eu/resource/authority/data-theme
-    'dct:accessRights': 'public',
-    'dct:identifier': dataset.landingPage,
-    'dct:language': null,
-    'dcat:keyword': dataset.keyword,
-    'dct:provenance': dataset.provenance, // won't be available if not INSPIRE metadata
-    'dct:issued': dataset.issuedDateTime,
-    'dcat:distribution': generateDistributions(dataset),
+    toArray (_key, val) {
+      if (!val) return [];
+      else return _.castArray(val);
+    }
   };
 
-  if (dataset.language) {
-    dcatDataset['dct:language'] = {
-      '@id': `lang:${dataset.language.toUpperCase()}`,
+  const formattedDataset = adlib(template, dcatDataset, transforms);
+
+  formattedDataset['dcat:distribution'] = generateDistributions(dcatDataset);
+
+  if (dcatDataset.language) {
+    formattedDataset['dct:language'] = {
+      '@id': `lang:${dcatDataset.language.toUpperCase()}`,
     };
   }
 
-  return indent(JSON.stringify(dcatDataset, null, '\t'), 2);
+  return indent(JSON.stringify(formattedDataset, null, '\t'), 2);
 }
 
 export interface ICatalogOptions {
@@ -100,28 +97,28 @@ function indent(str: string, nTabs = 1) {
  * See https://github.com/SEMICeu/dcat-ap_shacl/blob/master/shacl/dcat-ap-mdr-vocabularies.shapes.ttl
  * for validations.
  */
-function generateDistributions(dataset: DcatDataset) {
+function generateDistributions(dataset: any) {
   const distributionFns = [];
 
   // always add the Hub landing page
   distributionFns.push(getHubLandingPageDistribution);
   distributionFns.push(getEsriRESTDistribution);
 
-  if (dataset.isFeatureLayer) {
+  if (isFeatureLayer(dataset)) {
     distributionFns.push(getGeoJSONDistribution);
     distributionFns.push(getCSVDistribution);
   }
 
-  if (dataset.supportsWFS) {
+  if (supportsWFS(dataset)) {
     distributionFns.push(getOGCWFSDistribution);
   }
 
-  if (dataset.isFeatureLayer && dataset.hasGeometryType) {
+  if (isFeatureLayer(dataset) && hasGeometryType(dataset)) {
     distributionFns.push(getKMLDistribution);
     distributionFns.push(getShapefileDistribution);
   }
 
-  if (dataset.supportsWMS) {
+  if (supportsWMS(dataset)) {
     distributionFns.push(getOGCWMSDistribution);
   }
 
@@ -131,7 +128,7 @@ function generateDistributions(dataset: DcatDataset) {
 /**
  * Generates the distribution for the Hub landing page
  */
-function getHubLandingPageDistribution(dataset: DcatDataset) {
+function getHubLandingPageDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': dataset.landingPage,
@@ -146,7 +143,7 @@ function getHubLandingPageDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for the Esri Rest API
  */
-function getEsriRESTDistribution(dataset: DcatDataset) {
+function getEsriRESTDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
     'dcat:accessUrl': dataset.url,
@@ -161,10 +158,10 @@ function getEsriRESTDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for geoJSON
  */
-function getGeoJSONDistribution(dataset: DcatDataset) {
+function getGeoJSONDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getDownloadUrl('geojson'),
+    'dcat:accessUrl': getDownloadUrl(dataset, 'geojson'),
     'dct:format': {
       '@id': 'ftype:GEOJSON',
     },
@@ -176,10 +173,10 @@ function getGeoJSONDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for CSV
  */
-function getCSVDistribution(dataset: DcatDataset) {
+function getCSVDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getDownloadUrl('csv'),
+    'dcat:accessUrl': getDownloadUrl(dataset, 'csv'),
     'dct:format': {
       '@id': 'ftype:CSV',
     },
@@ -191,10 +188,10 @@ function getCSVDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for KML
  */
-function getKMLDistribution(dataset: DcatDataset) {
+function getKMLDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getDownloadUrl('kml'),
+    'dcat:accessUrl': getDownloadUrl(dataset, 'kml'),
     'dct:format': {
       '@id': 'ftype:KML',
     },
@@ -206,10 +203,10 @@ function getKMLDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for Shapefile
  */
-function getShapefileDistribution(dataset: DcatDataset) {
+function getShapefileDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getDownloadUrl('zip'),
+    'dcat:accessUrl': getDownloadUrl(dataset, 'zip'),
     'dct:format': {
       '@id': 'ftype:ZIP',
     },
@@ -221,10 +218,10 @@ function getShapefileDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for OGC WMS
  */
-function getOGCWMSDistribution(dataset: DcatDataset) {
+function getOGCWMSDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getOgcUrl('WMS'),
+    'dcat:accessUrl': getOgcUrl(dataset, 'WMS'),
     'dct:format': {
       '@id': 'ftype:WMS_SRVC',
     },
@@ -236,14 +233,53 @@ function getOGCWMSDistribution(dataset: DcatDataset) {
 /**
  * Generates the distribution for OGC WFS
  */
-function getOGCWFSDistribution(dataset: DcatDataset) {
+function getOGCWFSDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.getOgcUrl('WFS'),
+    'dcat:accessUrl': getOgcUrl(dataset, 'WFS'),
     'dct:format': {
       '@id': 'ftype:WFS_SRVC',
     },
     'dct:description': 'OGC WFS',
     'dct:title': 'OGC WFS',
   };
+}
+
+/**
+ * Remove overwrites of protected keys from a custom format template
+ */
+export function scrubProtectedKeys(template: DatasetFormatTemplate): DatasetFormatTemplate {
+  const scrubbedTemplate = _.cloneDeep(template);
+
+  delete scrubbedTemplate['@type'];
+  delete scrubbedTemplate['@id'];
+
+  if (scrubbedTemplate['dcat:contactPoint']) {
+    scrubbedTemplate['dcat:contactPoint']['@id'] = '{{ownerUri}}';
+    scrubbedTemplate['dcat:contactPoint']['@type'] = 'Contact';
+  }
+
+  delete scrubbedTemplate['dct:publisher'];
+  delete scrubbedTemplate['dcat:theme'];
+  delete scrubbedTemplate['dct:accessRights'];
+  delete scrubbedTemplate['dct:identifier']; 
+  delete scrubbedTemplate['dcat:keyword']; 
+  delete scrubbedTemplate['dct:provenance'];
+  delete scrubbedTemplate['dct:issued']; 
+  delete scrubbedTemplate['dct:language'];
+  delete scrubbedTemplate['dcat:distribution'];
+
+  return scrubbedTemplate;
+}
+
+/**
+ * Merges a custom format template with the default custom format template. 
+ * Ignores attempts to overwrite protected keys.
+ */
+export function mergeWithDefaultFormatTemplate(customTemplate?: DatasetFormatTemplate): DatasetFormatTemplate {
+  if (!customTemplate) {
+    return defaultFormatTemplate;
+  }
+  const scrubbedCustomTemplate = scrubProtectedKeys(customTemplate);
+  return Object.assign({}, defaultFormatTemplate, scrubbedCustomTemplate);
 }

@@ -1,5 +1,5 @@
 import { cloneObject } from '@esri/hub-common';
-import { DcatDataset } from './dcat-dataset';
+import { getDcatDataset, getDownloadUrl, getOgcUrl, supportsWFS, supportsWMS } from './dcat-dataset';
 
 import * as datasetFromApi from '../test-helpers/mock-dataset.json';
 
@@ -7,9 +7,9 @@ const siteUrl = 'https://foobar.hub.arcgis.com'
 const orgTitle = 'My Fun Org'
 const orgBaseUrl = 'https://my-fun-org.maps.arcgis.com'
 
-describe('DcatDataset', () => {
+describe('getDcatDataset', () => {
   it('Dataset props come from right places', function() {
-    const dataset = new DcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
+    const dataset = getDcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
 
     expect(dataset.id).toBe('f4bcc1035b7d46cba95e977f4affb6be_0')
     expect(dataset.url).toBe(
@@ -18,7 +18,7 @@ describe('DcatDataset', () => {
     expect(dataset.landingPage).toBe(
       'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0'
     )
-    expect(dataset.title).toBe('Tahoe places of interest')
+    expect(dataset.name).toBe('Tahoe places of interest')
     expect(dataset.description).toBe('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>')
     expect(dataset.owner).toBe('thervey_qa_pre_a_hub')
     expect(dataset.ownerUri).toBe(
@@ -33,8 +33,7 @@ describe('DcatDataset', () => {
     ])
     expect(dataset.issuedDateTime).toBe('2021-04-19T13:30:24.055-04:00')
     expect(dataset.orgTitle).toBe('My Fun Org')
-    // TODO - update when this is available through the API
-    expect(dataset.orgContactUrl).toBeNull();
+    expect(dataset.orgContactEmail).toBe('mailto:email@service.com');
     expect(dataset.provenance).toBe(
       'Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)'
     )
@@ -44,7 +43,7 @@ describe('DcatDataset', () => {
     const noMetadata = cloneObject(datasetFromApi)
     delete noMetadata.metadata
 
-    const dataset = new DcatDataset(noMetadata, orgBaseUrl, orgTitle, siteUrl)
+    const dataset = getDcatDataset(noMetadata, orgBaseUrl, orgTitle, siteUrl)
 
     expect(dataset.language).toBe('eng')
     expect(dataset.keyword).toEqual(['Data collection', 'just modified'])
@@ -59,63 +58,65 @@ describe('DcatDataset', () => {
     const expectedKeywords = ['ArcGIS Hub page'];
 
     expect(
-      new DcatDataset({ ...pageDataset, tags: undefined }, orgBaseUrl, orgTitle, siteUrl).keyword
+      getDcatDataset({ ...pageDataset, tags: undefined }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
     expect(
-      new DcatDataset({ ...pageDataset, tags: [] }, orgBaseUrl, orgTitle, siteUrl).keyword
+      getDcatDataset({ ...pageDataset, tags: [] }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
     expect(
-      new DcatDataset({ ...pageDataset, tags: [''] }, orgBaseUrl, orgTitle, siteUrl).keyword
+      getDcatDataset({ ...pageDataset, tags: [''] }, orgBaseUrl, orgTitle, siteUrl).keyword
     ).toEqual(expectedKeywords);
   })
+  describe('Dcat Dataset Helpers', () => {
+    it('getDownloadUrl()', function() {
+      const noSR = cloneObject(datasetFromApi)
+      const withSR = cloneObject(datasetFromApi)
+  
+      delete noSR.server.spatialReference;
+  
+      withSR.server.spatialReference = {
+        wkid: 4325,
+        latestWkid: 8374
+      }
+  
+      const datasetNoSR = getDcatDataset(noSR, orgBaseUrl, orgTitle, siteUrl)
+      const datasetSR = getDcatDataset(withSR, orgBaseUrl, orgTitle, siteUrl)
+  
+      expect(getDownloadUrl(datasetNoSR, 'geojson')).toBe(
+        'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0.geojson'
+      )
+      expect(getDownloadUrl(datasetSR, 'csv')).toBe(
+        'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0.csv?outSR=%7B%22latestWkid%22%3A8374%2C%22wkid%22%3A4325%7D'
+      )
+    })
+  
+    it('getOgcUrl()', function() {
+      const dataset = getDcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
+  
+      expect(getOgcUrl(dataset)).toBe(
+        'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/services/Tahoe_Things/FeatureServer/WMSServer?request=GetCapabilities&service=WMS'
+      )
+      expect(getOgcUrl(dataset, 'WFS')).toBe(
+        'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/services/Tahoe_Things/FeatureServer/WFSServer?request=GetCapabilities&service=WFS'
+      )
+    })
 
-  it('getDownloadUrl', function() {
-    const noSR = cloneObject(datasetFromApi)
-    const withSR = cloneObject(datasetFromApi)
+    it('supportsWFS() and supportsWMS() correctly reports WFS/WMS support', function() {
+      const hubDatasetWFS = cloneObject(datasetFromApi)
+      const hubDatasetWMS = cloneObject(datasetFromApi)
+  
+      hubDatasetWFS.supportedExtensions = 'WFSServer'
+      hubDatasetWMS.supportedExtensions = 'WMSServer'
+  
+      const dcatDatasetWFS = getDcatDataset(hubDatasetWFS, orgBaseUrl, orgTitle, siteUrl)
+      const dcatDatasetWMS = getDcatDataset(hubDatasetWMS, orgBaseUrl, orgTitle, siteUrl)
+  
+      expect(supportsWFS(dcatDatasetWFS)).toBeTruthy()
+      expect(supportsWMS(dcatDatasetWFS)).toBeFalsy()
+  
+      expect(supportsWMS(dcatDatasetWMS)).toBeTruthy()
+      expect(supportsWFS(dcatDatasetWMS)).toBeFalsy()
+    })
 
-    delete noSR.server.spatialReference;
-
-    withSR.server.spatialReference = {
-      wkid: 4325,
-      latestWkid: 8374
-    }
-
-    const datasetNoSR = new DcatDataset(noSR, orgBaseUrl, orgTitle, siteUrl)
-    const datasetSR = new DcatDataset(withSR, orgBaseUrl, orgTitle, siteUrl)
-
-    expect(datasetNoSR.getDownloadUrl('geojson')).toBe(
-      'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0.geojson'
-    )
-    expect(datasetSR.getDownloadUrl('csv')).toBe(
-      'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0.csv?outSR=%7B%22latestWkid%22%3A8374%2C%22wkid%22%3A4325%7D'
-    )
-  })
-
-  it('getOgcUrl', function() {
-    const dataset = new DcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
-
-    expect(dataset.getOgcUrl()).toBe(
-      'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/services/Tahoe_Things/FeatureServer/WMSServer?request=GetCapabilities&service=WMS'
-    )
-    expect(dataset.getOgcUrl('WFS')).toBe(
-      'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/services/Tahoe_Things/FeatureServer/WFSServer?request=GetCapabilities&service=WFS'
-    )
-  })
-
-  it('correctly reports WFS/WMS support', function() {
-    const supportsWFS = cloneObject(datasetFromApi)
-    const supportsWMS = cloneObject(datasetFromApi)
-
-    supportsWFS.supportedExtensions = 'WFSServer'
-    supportsWMS.supportedExtensions = 'WMSServer'
-
-    const datasetWFS = new DcatDataset(supportsWFS, orgBaseUrl, orgTitle, siteUrl)
-    const datasetWMS = new DcatDataset(supportsWMS, orgBaseUrl, orgTitle, siteUrl)
-
-    expect(datasetWFS.supportsWFS).toBeTruthy()
-    expect(datasetWFS.supportsWMS).toBeFalsy()
-
-    expect(datasetWMS.supportsWMS).toBeTruthy()
-    expect(datasetWMS.supportsWFS).toBeFalsy()
-  })
+  });
 })
