@@ -1,6 +1,6 @@
 # CHANGELOG.md
 
-## Unreleased
+## 1.2.1
 
 Fixed
 - Scrub configurations that attempt to overwrite the 'dct:publisher', 'dct:provenance' and 'dct:accessRights' properties [#10](https://github.com/koopjs/koop-output-dcat-ap-201/pull/10)
