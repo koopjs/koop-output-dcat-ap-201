@@ -259,9 +259,12 @@ export function scrubProtectedKeys(template: DatasetFormatTemplate): DatasetForm
     scrubbedTemplate['dcat:contactPoint']['@type'] = 'Contact';
   }
 
+  delete scrubbedTemplate['dct:publisher'];
   delete scrubbedTemplate['dcat:theme'];
+  delete scrubbedTemplate['dct:accessRights'];
   delete scrubbedTemplate['dct:identifier']; 
   delete scrubbedTemplate['dcat:keyword']; 
+  delete scrubbedTemplate['dct:provenance'];
   delete scrubbedTemplate['dct:issued']; 
   delete scrubbedTemplate['dct:language'];
   delete scrubbedTemplate['dcat:distribution'];
