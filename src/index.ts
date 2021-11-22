@@ -55,17 +55,20 @@ export = class OutputDcatAp201 {
         env === 'prod' ? '' : env
       }.arcgis.com`;
 
+      const id = String(req.query.id || '');
+
       const dcatStream = getDataStreamDcatAp201({
         domainRecord,
         siteItem: siteModel.item,
         orgBaseUrl,
       });
 
-      req.res.locals.searchRequest = this.getSearchRequest(
-        siteCatalog,
+      req.res.locals.searchRequest = this.getSearchRequest({
+        catalog: siteCatalog,
+        id,
         portalUrl,
-        requiredFields
-      );
+        fields: requiredFields
+      });
 
       const datasetStream = await this.model.pullStream(req);
 
@@ -101,19 +104,23 @@ export = class OutputDcatAp201 {
     };
   }
 
-  private getSearchRequest(
+  private getSearchRequest(opts: {
     catalog: any,
+    id: string,
     portalUrl: string,
     fields: string[]
-  ): IContentSearchRequest {
+  }): IContentSearchRequest {
+    const filter = opts.id
+      ? { id: opts.id }
+      : { group: opts.catalog?.groups, orgid: opts.catalog?.orgId };
+
+    const fields = opts.fields ? opts.fields.join(',') : undefined;
+
     const searchRequest: IContentSearchRequest = {
-      filter: {
-        group: catalog.groups,
-        orgid: catalog.orgId,
-      },
+      filter,
       options: {
         portal: portalUrl,
-        fields: fields.join(',')
+        fields
       },
     };
     return searchRequest;
