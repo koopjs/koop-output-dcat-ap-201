@@ -62,7 +62,7 @@ export = class OutputDcatAp201 {
       const orgBaseUrl = `https://${domainRecord.orgKey}.maps${
         env === 'prod' ? '' : env
       }.arcgis.com`;
-      
+
       const { dcatStream, dependencies } = getDataStreamDcatAp201({
         domainRecord,
         siteItem: siteModel.item,
