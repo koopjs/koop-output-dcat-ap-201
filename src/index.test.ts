@@ -2,7 +2,6 @@ import { mocked } from 'ts-jest/utils';
 
 import { readableFromArray } from './test-helpers/stream-utils';
 import * as express from 'express';
-import { IItem } from '@esri/arcgis-rest-types';
 import * as request from 'supertest';
 
 import * as mockDomainRecord from './test-helpers/mock-domain-record.json';
@@ -183,12 +182,9 @@ describe('Output Plugin', () => {
   it('returns empty response if no site catalog', async () => {
     [ plugin, app ] = buildPluginAndApp();
 
-    mockGetSite.mockResolvedValue({
-      item: {} as IItem,
-      data: {
-        // no site catalog
-      }
-    });
+    const siteWithoutCatalogOrFeed: IModel = _.cloneDeep(mockSiteModel);
+    siteWithoutCatalogOrFeed.data = {}
+    mockGetSite.mockResolvedValue(siteWithoutCatalogOrFeed);
 
     await request(app)
       .get('/dcat')

@@ -50,31 +50,40 @@ export = class OutputDcatAp201 {
     try {
       const { domainRecord, siteModel } = await this.fetchDomainAndSite(req.hostname);
 
-      const siteCatalog = _.get(siteModel, 'data.catalog');
-      if (!siteCatalog) {
-        res.status(200).send({});
-        return;
+      // Use dcatConfig query param if provided, else default to site's config
+      let dcatConfig = typeof req.query.dcatConfig === 'string'
+        ? this.parseProvidedDcatConfig(req.query.dcatConfig as string)
+        : req.query.dcatConfig;
+    
+      if (!dcatConfig) {
+        dcatConfig = _.get(siteModel, 'data.feeds.dcatAP201');
       }
+
       const orgBaseUrl = `https://${domainRecord.orgKey}.maps${
         env === 'prod' ? '' : env
       }.arcgis.com`;
 
-      const customFormatTemplate = _.get(siteModel, 'data.feeds.dcatAP201');
-      
       const { dcatStream, dependencies } = getDataStreamDcatAp201({
         domainRecord,
         siteItem: siteModel.item,
         orgBaseUrl,
-        customFormatTemplate
+        customFormatTemplate: dcatConfig
       });
       
       const apiTerms = getApiTermsFromDependencies(dependencies);
       
-      req.res.locals.searchRequest = this.getSearchRequest(
-        siteCatalog,
-        portalUrl,
-        apiTerms
-      );
+      // Construct request to send, send empty if no id or catalog
+      const id = String(req.query.id || '');
+      const siteCatalog = _.get(siteModel, 'data.catalog');
+
+      if (!id && !siteCatalog) {
+        res.status(200).send({});
+        return;
+      }
+  
+      req.res.locals.searchRequest = id 
+        ? this.getDatasetSearchRequest({ id, portalUrl, fields: apiTerms })
+        : this.getCatalogSearchRequest({ catalog: siteCatalog, portalUrl, fields: apiTerms });
 
       const datasetStream = await this.model.pullStream(req);
 
@@ -101,6 +110,14 @@ export = class OutputDcatAp201 {
     return { domainRecord, siteModel };
   }
 
+  private parseProvidedDcatConfig(dcatConfig: string) {
+    try {
+      return JSON.parse(dcatConfig);
+    } catch (err) {
+      return undefined;
+    }
+  }
+
   private getRequestOptions(portalUrl: string): IHubRequestOptions {
     return {
       isPortal: false,
@@ -110,19 +127,34 @@ export = class OutputDcatAp201 {
     };
   }
 
-  private getSearchRequest(
+  private getDatasetSearchRequest(opts: {
+    id: string,
+    portalUrl: string,
+    fields: string[]
+  }): IContentSearchRequest {
+    const searchRequest: IContentSearchRequest = {
+      filter: { id: opts.id },
+      options: {
+        portal: portalUrl,
+        fields: opts.fields ? opts.fields.join(',') : undefined
+      },
+    };
+    return searchRequest;
+  }
+
+  private getCatalogSearchRequest(opts: {
     catalog: any,
     portalUrl: string,
     fields: string[]
-  ): IContentSearchRequest {
+  }): IContentSearchRequest {
     const searchRequest: IContentSearchRequest = {
       filter: {
-        group: catalog.groups,
-        orgid: catalog.orgId,
+        group: opts.catalog.groups,
+        orgid: opts.catalog.orgId,
       },
       options: {
         portal: portalUrl,
-        fields: fields.join(',')
+        fields: opts.fields ? opts.fields.join(',') : undefined
       },
     };
     return searchRequest;
