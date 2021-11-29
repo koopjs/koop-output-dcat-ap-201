@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.3.1
+Fixed
+- Set proper status codes for errors [#12](https://github.com/koopjs/koop-output-dcat-ap-201/pull/12)
+
 ## 1.3.0
 Added
 - Support for `id` and `dcatConfig` query parameters [#11](https://github.com/koopjs/koop-output-dcat-ap-201/pull/11)
