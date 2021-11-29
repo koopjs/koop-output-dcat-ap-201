@@ -9,6 +9,7 @@ import {
   IDomainEntry,
   IHubRequestOptions,
   lookupDomain,
+  RemoteServerError,
 } from '@esri/hub-common';
 import { IContentSearchRequest } from '@esri/hub-search';
 
@@ -85,7 +86,7 @@ export = class OutputDcatAp201 {
         ? this.getDatasetSearchRequest({ id, portalUrl, fields: apiTerms })
         : this.getCatalogSearchRequest({ catalog: siteCatalog, portalUrl, fields: apiTerms });
 
-      const datasetStream = await this.model.pullStream(req);
+      const datasetStream = await this.getDatasetStream(req);
 
       datasetStream
         .pipe(dcatStream)
@@ -94,20 +95,29 @@ export = class OutputDcatAp201 {
           res.status(500).send(this.getErrorResponse(err));
         });
     } catch (err) {
-      res.status(500).send(this.getErrorResponse(err));
+      res.status(err.status || 500).send(this.getErrorResponse(err));
     }
   }
 
   private async fetchDomainAndSite(hostname) {
     const requestOptions = this.getRequestOptions(portalUrl);
 
-    const domainRecord = (await lookupDomain(
-      hostname,
-      requestOptions,
-    )) as IDomainEntry;
-    const siteModel = await getSiteById(domainRecord.siteId, requestOptions);
+    try {
+      const domainRecord = (await lookupDomain(
+        hostname,
+        requestOptions,
+      )) as IDomainEntry;
+      const siteModel = await getSiteById(domainRecord.siteId, requestOptions);
+  
+      return { domainRecord, siteModel };
+    } catch (err) {
 
-    return { domainRecord, siteModel };
+      // Throw 404 if domain does not exist (first) or site is private (second)
+      if (err.message.includes(':: 404') || err.response?.error?.code === 403) {
+        throw new RemoteServerError(err.message, null, 404);
+      }
+      throw new RemoteServerError(err.message, null, 500);
+    }
   }
 
   private parseProvidedDcatConfig(dcatConfig: string) {
@@ -158,6 +168,17 @@ export = class OutputDcatAp201 {
       },
     };
     return searchRequest;
+  }
+
+  private async getDatasetStream(req: Request) {
+    try {
+      return await this.model.pullStream(req);
+    } catch (err) {
+      if (err.status === 400) {
+        throw new RemoteServerError(err.message, null, 400);
+      }
+      throw new RemoteServerError(err.message, null, 500);
+    }
   }
 
   private getErrorResponse(err: any) {
