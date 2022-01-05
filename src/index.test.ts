@@ -1,20 +1,21 @@
 import { mocked } from 'ts-jest/utils';
-
-import { readableFromArray } from './test-helpers/stream-utils';
 import * as express from 'express';
 import * as request from 'supertest';
+import * as _ from 'lodash';
 
+import { IHubRequestOptions, IModel } from '@esri/hub-common';
+
+import { FeedFormatterStream } from './dcat-ap/feed-formatter-stream';
 import * as mockDomainRecord from './test-helpers/mock-domain-record.json';
 import * as mockSiteModel from './test-helpers/mock-site-model.json';
 import * as mockDataset from './test-helpers/mock-dataset.json';
-import { IHubRequestOptions, IModel } from '@esri/hub-common';
-import { FeedFormatterStream } from './dcat-ap/feed-formatter-stream';
-import * as _ from 'lodash';
+import { readableFromArray } from './test-helpers/stream-utils';
 
 describe('Output Plugin', () => {
   let mockConfigModule;
   let mockLookupDomain;
   let mockGetSite;
+  let mockHubApiRequest;
   let plugin;
   let app: express.Application;
 
@@ -44,23 +45,27 @@ describe('Output Plugin', () => {
     const {
       lookupDomain,
       getSiteById,
+      hubApiRequest
     } = require('@esri/hub-common');
     // this fancy code is just to _only_ mock some fns
     // and leave the rest alone
     jest.mock('@esri/hub-common', () => ({
       ...(jest.requireActual('@esri/hub-common') as object),
       getSiteById: jest.fn(),
-      lookupDomain: jest.fn()
+      lookupDomain: jest.fn(),
+      hubApiRequest: jest.fn()
     }));
 
     mockConfigModule = mocked(require('config'), true);
     jest.mock('config');
 
     mockLookupDomain = mocked(lookupDomain);
-    mockGetSite = mocked(getSiteById);
-
     mockLookupDomain.mockResolvedValue(mockDomainRecord);
+
+    mockGetSite = mocked(getSiteById);
     mockGetSite.mockResolvedValue(mockSiteModel);
+
+    mockHubApiRequest = mocked(hubApiRequest);
   });
 
   it('is configured correctly', () => {
@@ -280,12 +285,21 @@ describe('Output Plugin', () => {
 
     beforeEach(() => {
       const { getDataStreamDcatAp201 } = require('./dcat-ap');
-      jest.mock('./dcat-ap');
+
+      jest.mock('./dcat-ap', () => ({
+        ...(jest.requireActual('./dcat-ap') as object),
+        getDataStreamDcatAp201: jest.fn()
+      }));
+  
       mockGetDataStreamDcatAp201 = mocked(getDataStreamDcatAp201)
         .mockReturnValue({
           dcatStream: new FeedFormatterStream('{', '}', '', () => ''),
           dependencies: []
         });
+    });
+
+    afterEach(() => {
+      mockGetDataStreamDcatAp201.mockRestore();
     });
 
     it("Properly passes a site's custom dcat configuration to getDataStreamAp201 when present", async () => {
@@ -318,6 +332,57 @@ describe('Output Plugin', () => {
               orgBaseUrl: 'https://qa-pre-a-hub.maps.arcgis.com',
               customFormatTemplate: customConfigSiteModel.data.feeds.dcatAP201
             });
+        });
+    });
+
+    it('Properly converts adlib path hierarchies to Hub API Fields', async () => {
+      [ plugin, app ] = buildPluginAndApp();
+
+      const customConfigSiteModel: IModel = _.cloneDeep(mockSiteModel);
+      customConfigSiteModel.data.feeds = {
+        dcatAP201: {
+          "hierarchyTwoValidApiFields": "{{venue || openData}}",
+          "hierarchyLastFieldIsInvalidApiField": "{{contentStatus || a_literal}}",
+          "hierarchyThreeValidApiFieldsOneInvalid": "{{itemModified || region || recordCount || another_literal}}",
+          "hierarchyOneDuplicateValue": "{{snippet || openData}}"
+        }
+      }
+  
+      mockGetSite.mockResolvedValue(customConfigSiteModel);
+  
+      mockGetDataStreamDcatAp201.mockReturnValue({
+        dcatStream: new FeedFormatterStream('{', '}', '', () => ''),
+        dependencies: [
+        'venue || openData', 'contentStatus || a_literal',
+        'itemModified || region || recordCount || another_literal', 'snippet || openData'
+        ]
+      });
+
+      mockHubApiRequest.mockResolvedValue([
+        'venue', 'openData', 'contentStatus', 'itemModified', 'region', 'recordCount', 'snippet'
+      ]);
+  
+      await request(app)
+        .get('/dcat')
+        .set('host', siteHostName)
+        .expect('Content-Type', /application\/json/)
+        .expect(200)
+        .expect(res => {
+          expect(plugin.model.pullStream).toHaveBeenCalledTimes(1);
+  
+          const actualSearchRequest = _.get(plugin.model.pullStream, 'mock.calls[0][0].res.locals.searchRequest');
+          const fieldsAsArray: string[] = actualSearchRequest.options.fields.split(',');
+          expect(fieldsAsArray.includes('venue')).toBeTruthy();
+          expect(fieldsAsArray.includes('openData')).toBeTruthy();
+          expect(fieldsAsArray.includes('contentStatus')).toBeTruthy();
+          expect(fieldsAsArray.includes('itemModified')).toBeTruthy();
+          expect(fieldsAsArray.includes('region')).toBeTruthy();
+          expect(fieldsAsArray.includes('recordCount')).toBeTruthy();
+          expect(fieldsAsArray.includes('snippet')).toBeTruthy();
+          expect(fieldsAsArray.includes('a_literal')).toBeFalsy();
+          expect(fieldsAsArray.includes('another_literal')).toBeFalsy();
+  
+          expect(res.body).toBeDefined();
         });
     });
   });
