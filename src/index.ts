@@ -6,6 +6,7 @@ import {
   getHubApiUrl,
   getPortalApiUrl,
   getSiteById,
+  hubApiRequest,
   IDomainEntry,
   IHubRequestOptions,
   lookupDomain,
@@ -27,9 +28,54 @@ if (/devext\.|mapsdev\./.test(portalUrl)) {
   env = 'qa';
 }
 
-function getApiTermsFromDependencies (dependencies: string[]) {
-  // Hub API only supports scoping by top-level terms
-  return Array.from(new Set(dependencies.map(dep => dep.split('.')[0])));
+/**
+  * This function converts adlib'ed fields from the specified catalog into valid API fields used
+  * to query the API for catalog content.
+  * 
+  * For fields that specify a path hierarchy using the || operator,
+  * process each field as an API field EXCEPT for the last one.
+  * The last field is interpreted as EITHER a templated value (e.g. `"modifed")
+  * OR a literal value (e.g. "my literal value")
+  * See "Path Hierarchies and Defaults" at https://github.com/Esri/adlib
+  * 
+  * Because the last field can be interpreted as either, with no syntax to differentiate,
+  * the last field will be treated as a literal if it is not a valid Hub API field. As such,
+  * it is not converted to a Hub API field
+  * 
+  * @param dependencies - list of fields processed by adlib to use when building the catalog
+  * @returns - a list of valid Hub API fields
+*/
+async function getApiTermsFromDependencies (dependencies: string[]) {
+  if (!dependencies || !Array.isArray(dependencies)) return undefined;
+
+  // Only get valid Hub API fields if they are needed
+  const doesPathHierarchyExist = dependencies.filter(dep => dep.includes('||')).length;
+  const validApiFields: string[] = doesPathHierarchyExist ? await hubApiRequest('fields') : [];
+  const validApiFieldMap = validApiFields.reduce((fieldMap, field) => {
+    fieldMap[field] = true;
+    return fieldMap;
+  }, {});
+
+  return Array.from(new Set(_.flatten(dependencies.map(dep => {
+    // Dependency could indicate a hierarchial path (e.g. orgEmail || author)
+    if (dep.includes('||')) {
+      const providedSubDeps = dep.split('||').map(subDep => subDep.trim()).filter(subDep => !!subDep);
+      const returnedSubDeps = [];
+
+      // Assume all non-last fields are valid API fields
+      for (let i = 0; i < providedSubDeps.length - 1; i++) {
+        returnedSubDeps.push(providedSubDeps[i].split('.')[0]);
+      }
+
+      // Only push the last one if its a valid API field
+      if (validApiFieldMap[providedSubDeps[providedSubDeps.length - 1]]) {
+        returnedSubDeps.push(providedSubDeps[providedSubDeps.length - 1].split('.')[0]);
+      }
+
+      return returnedSubDeps;
+    }
+    return dep.split('.')[0];
+  }))));
 }
 
 export = class OutputDcatAp201 {
@@ -70,8 +116,8 @@ export = class OutputDcatAp201 {
         orgBaseUrl,
         customFormatTemplate: dcatConfig
       });
-      
-      const apiTerms = getApiTermsFromDependencies(dependencies);
+
+      const apiTerms = await getApiTermsFromDependencies(dependencies);
       
       // Construct request to send, send empty if no id or catalog
       const id = String(req.query.id || '');
@@ -150,6 +196,7 @@ export = class OutputDcatAp201 {
       },
     };
     return searchRequest;
+
   }
 
   private getCatalogSearchRequest(opts: {
