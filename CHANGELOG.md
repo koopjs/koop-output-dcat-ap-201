@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.4.0
+Added
+- Handling for path hierchies and fallback values [#13](https://github.com/koopjs/koop-output-dcat-ap-201/pull/13)
+
 ## 1.3.1
 Fixed
 - Set proper status codes for errors [#12](https://github.com/koopjs/koop-output-dcat-ap-201/pull/12)
