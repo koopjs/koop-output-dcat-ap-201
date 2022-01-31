@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { IItem } from '@esri/arcgis-rest-portal';
 import {
   cloneObject,
@@ -250,13 +251,13 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
         'dcat:contactPoint': {
           '@id': '{{ Contact Point Id Injection }}',
           '@type': '{{ Contact Point Type Injection }}',
-          "vcard:fn": "{{ owner}}", // default value
+          "vcard:fn": "{{ owner }}", // default value
           "vcard:hasEmail": "{{ orgContactEmail }}", // default value
         },
         'dct:publisher': '{{ Publisher Injection }}',
         'dcat:theme': '{{ Theme Injection }}',
         'dct:accessRights': '{{ Access Rights Injection }}',
-        'dct:identifier': '{{ Identifier Injection}}',
+        'dct:identifier': '{{ Identifier Injection }}',
         'dcat:keyword': '{{ Keyword Injection }}',
         'dct:provenance': '{{ Provenance Injection }}',
         'dct:issued': '{{ Issued Injection}}',
@@ -283,6 +284,59 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
     expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
     expect(chk1['dct:provenance']).toEqual('Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)');
+    expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
+    expect(chk1['dct:language']).toStrictEqual({ '@id': 'lang:GER' });
+  });
+
+
+  it('replaces values of protected fields with an empty string if adlib returns the templated literal', async () => {
+    const clonedDataset = cloneObject(datasetFromApi);
+    _.set(clonedDataset, 'metadata.metadata.dataIdInfo.idCredit', undefined);
+
+    const { feed } = await generateDcatFeed(
+      domainRecord, 
+      siteItem, 
+      [clonedDataset],
+      'https://qa-pre-a-hub.mapsqa.arcgis.com',
+      {
+        '@type': '{{ Type Injection }}',
+        '@id': '{{ Id Injection }}',
+        'dcat:contactPoint': {
+          '@id': '{{ Contact Point Id Injection }}',
+          '@type': '{{ Contact Point Type Injection }}',
+          "vcard:fn": "{{ owner }}", // default value
+          "vcard:hasEmail": "{{ orgContactEmail }}", // default value
+        },
+        'dct:publisher': '{{ Publisher Injection }}',
+        'dcat:theme': '{{ Theme Injection }}',
+        'dct:accessRights': '{{ Access Rights Injection }}',
+        'dct:identifier': '{{ Identifier Injection }}',
+        'dcat:keyword': '{{ Keyword Injection }}',
+        'dct:provenance': '{{ Provenance Injection }}',
+        'dct:issued': '{{ Issued Injection }}',
+        'dct:language': '{{ Language Injection }}',
+        'dcat:distribution': '{{ Distribution Injection }}',
+      }
+    );
+
+    const chk1 = feed['dcat:dataset'][0];
+
+    expect(chk1['@type']).toEqual('dcat:Dataset');
+    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dct:title']).toEqual('Tahoe places of interest');
+    expect(chk1['dct:description']).toEqual('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>');
+    expect(chk1['dcat:contactPoint']).toStrictEqual({
+      '@id': 'https://qa-pre-a-hub.mapsqa.arcgis.com/sharing/rest/community/users/thervey_qa_pre_a_hub?f=json',
+      '@type': 'Contact',
+      'vcard:fn': 'thervey_qa_pre_a_hub',
+      'vcard:hasEmail': 'mailto:email@service.com',
+    });
+    expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
+    expect(chk1['dcat:theme']).toEqual('geospatial');
+    expect(chk1['dct:accessRights']).toEqual('public');
+    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
+    expect(chk1['dct:provenance']).toEqual('');
     expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
     expect(chk1['dct:language']).toStrictEqual({ '@id': 'lang:GER' });
   });
