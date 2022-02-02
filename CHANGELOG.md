@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.5.0
+Added
+- Empty strings as fallback values for non-editable fields [#13](https://github.com/koopjs/koop-output-dcat-ap-201/pull/14)
+
 ## 1.4.0
 Added
 - Handling for path hierchies and fallback values [#13](https://github.com/koopjs/koop-output-dcat-ap-201/pull/13)
