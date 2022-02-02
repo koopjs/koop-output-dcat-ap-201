@@ -5,6 +5,7 @@ import alpha2ToAlpha3Langs from './languages';
 import * as _ from 'lodash';
 import { adlib, TransformsList } from 'adlib';
 import { defaultFormatTemplate } from '../default-format-template';
+import { nonEditableFieldPaths } from './noneditable-fields';
 
 /**
  * Takes a locale (e.g. "en-us") and returns an
@@ -31,6 +32,8 @@ export function formatDcatDataset(dcatDataset: any, template: DatasetFormatTempl
   };
 
   const formattedDataset = adlib(template, dcatDataset, transforms);
+
+  setLeftoverInterpolations(formattedDataset);
 
   formattedDataset['dcat:distribution'] = generateDistributions(dcatDataset);
 
@@ -249,26 +252,11 @@ function getOGCWFSDistribution(dataset: any) {
  * Remove overwrites of protected keys from a custom format template
  */
 export function scrubProtectedKeys(template: DatasetFormatTemplate): DatasetFormatTemplate {
-  const scrubbedTemplate = _.cloneDeep(template);
-
-  delete scrubbedTemplate['@type'];
-  delete scrubbedTemplate['@id'];
-
+  const scrubbedTemplate = _.cloneDeep(_.omit(template, nonEditableFieldPaths));
   if (scrubbedTemplate['dcat:contactPoint']) {
     scrubbedTemplate['dcat:contactPoint']['@id'] = '{{ownerUri}}';
     scrubbedTemplate['dcat:contactPoint']['@type'] = 'Contact';
   }
-
-  delete scrubbedTemplate['dct:publisher'];
-  delete scrubbedTemplate['dcat:theme'];
-  delete scrubbedTemplate['dct:accessRights'];
-  delete scrubbedTemplate['dct:identifier']; 
-  delete scrubbedTemplate['dcat:keyword']; 
-  delete scrubbedTemplate['dct:provenance'];
-  delete scrubbedTemplate['dct:issued']; 
-  delete scrubbedTemplate['dct:language'];
-  delete scrubbedTemplate['dcat:distribution'];
-
   return scrubbedTemplate;
 }
 
@@ -282,4 +270,16 @@ export function mergeWithDefaultFormatTemplate(customTemplate?: DatasetFormatTem
   }
   const scrubbedCustomTemplate = scrubProtectedKeys(customTemplate);
   return Object.assign({}, defaultFormatTemplate, scrubbedCustomTemplate);
+}
+
+/**
+ * Overwrites templated values returned by adlib for non-editable fields
+ */
+function setLeftoverInterpolations(dataset) {
+  nonEditableFieldPaths.forEach(path => {
+    const value = _.get(dataset, path, '');
+    if (typeof value === 'string' && value.match(/{{.+}}/)?.length) {
+      _.set(dataset, path, '');
+    }
+  });
 }
