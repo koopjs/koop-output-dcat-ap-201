@@ -127,7 +127,7 @@ describe('Output Plugin', () => {
       },
       options: {
         portal: 'https://www.arcgis.com',
-        fields: 'id,url,owner,name,type,typeKeywords,tags,description,culture,created,metadata,server,geometryType,orgContactEmail'
+        fields: 'id,access,size,slug,url,owner,name,type,typeKeywords,tags,description,culture,created,metadata,server,geometryType,orgContactEmail'
       }
     })
   });
@@ -328,7 +328,8 @@ describe('Output Plugin', () => {
           expect(mockGetDataStreamDcatAp201)
             .toHaveBeenCalledWith({
               domainRecord: mockDomainRecord,
-              siteItem: customConfigSiteModel.item,
+              siteModel: customConfigSiteModel,
+              siteUrl: siteHostName,
               orgBaseUrl: 'https://qa-pre-a-hub.maps.arcgis.com',
               customFormatTemplate: customConfigSiteModel.data.feeds.dcatAP201
             });
