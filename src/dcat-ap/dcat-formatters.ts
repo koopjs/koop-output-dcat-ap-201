@@ -1,6 +1,14 @@
 import { IItem } from '@esri/arcgis-rest-portal';
 import { IDomainEntry } from '@esri/hub-common';
-import { getDownloadUrl, getOgcUrl, hasGeometryType, isFeatureLayer, supportsWFS, supportsWMS } from './dcat-dataset';
+import { 
+  getDownloadUrl,
+  getOgcUrl,
+  hasGeometryType,
+  isFeatureLayer,
+  supportsWFS,
+  supportsWMS,
+  isProxiedCSV 
+} from './dcat-dataset';
 import alpha2ToAlpha3Langs from './languages';
 import * as _ from 'lodash';
 import { adlib, TransformsList } from 'adlib';
@@ -106,6 +114,10 @@ function generateDistributions(dataset: any) {
   // always add the Hub landing page
   distributionFns.push(getHubLandingPageDistribution);
   distributionFns.push(getEsriRESTDistribution);
+  
+  if (isProxiedCSV(dataset)) {
+    distributionFns.push(getCSVDistribution); 
+  }
 
   if (isFeatureLayer(dataset)) {
     distributionFns.push(getGeoJSONDistribution);

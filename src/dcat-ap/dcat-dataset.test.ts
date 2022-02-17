@@ -1,22 +1,24 @@
-import { cloneObject } from '@esri/hub-common';
+import { cloneObject, IModel } from '@esri/hub-common';
 import { getDcatDataset, getDownloadUrl, getOgcUrl, supportsWFS, supportsWMS } from './dcat-dataset';
 
 import * as datasetFromApi from '../test-helpers/mock-dataset.json';
 
 const siteUrl = 'https://foobar.hub.arcgis.com'
+const siteModel = { item: { url: siteUrl } } as unknown as IModel;
 const orgTitle = 'My Fun Org'
 const orgBaseUrl = 'https://my-fun-org.maps.arcgis.com'
 
 describe('getDcatDataset', () => {
+
   it('Dataset props come from right places', function() {
-    const dataset = getDcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
+    const dataset = getDcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl, siteModel)
 
     expect(dataset.id).toBe('f4bcc1035b7d46cba95e977f4affb6be_0')
     expect(dataset.url).toBe(
       'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/rest/services/Tahoe_Things/FeatureServer/0'
     )
     expect(dataset.landingPage).toBe(
-      'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0'
+      'https://foobar.hub.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest'
     )
     expect(dataset.name).toBe('Tahoe places of interest')
     expect(dataset.description).toBe('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>')
@@ -43,7 +45,7 @@ describe('getDcatDataset', () => {
     const noMetadata = cloneObject(datasetFromApi)
     delete noMetadata.metadata
 
-    const dataset = getDcatDataset(noMetadata, orgBaseUrl, orgTitle, siteUrl)
+    const dataset = getDcatDataset(noMetadata, orgBaseUrl, orgTitle, siteUrl, siteModel)
 
     expect(dataset.language).toBe('eng')
     expect(dataset.keyword).toEqual(['Data collection', 'just modified'])
@@ -58,13 +60,13 @@ describe('getDcatDataset', () => {
     const expectedKeywords = ['ArcGIS Hub page'];
 
     expect(
-      getDcatDataset({ ...pageDataset, tags: undefined }, orgBaseUrl, orgTitle, siteUrl).keyword
+      getDcatDataset({ ...pageDataset, tags: undefined }, orgBaseUrl, orgTitle, siteUrl, siteModel).keyword
     ).toEqual(expectedKeywords);
     expect(
-      getDcatDataset({ ...pageDataset, tags: [] }, orgBaseUrl, orgTitle, siteUrl).keyword
+      getDcatDataset({ ...pageDataset, tags: [] }, orgBaseUrl, orgTitle, siteUrl, siteModel).keyword
     ).toEqual(expectedKeywords);
     expect(
-      getDcatDataset({ ...pageDataset, tags: [''] }, orgBaseUrl, orgTitle, siteUrl).keyword
+      getDcatDataset({ ...pageDataset, tags: [''] }, orgBaseUrl, orgTitle, siteUrl, siteModel).keyword
     ).toEqual(expectedKeywords);
   })
   describe('Dcat Dataset Helpers', () => {
@@ -79,19 +81,19 @@ describe('getDcatDataset', () => {
         latestWkid: 8374
       }
   
-      const datasetNoSR = getDcatDataset(noSR, orgBaseUrl, orgTitle, siteUrl)
-      const datasetSR = getDcatDataset(withSR, orgBaseUrl, orgTitle, siteUrl)
+      const datasetNoSR = getDcatDataset(noSR, orgBaseUrl, orgTitle, siteUrl, siteModel)
+      const datasetSR = getDcatDataset(withSR, orgBaseUrl, orgTitle, siteUrl, siteModel)
   
       expect(getDownloadUrl(datasetNoSR, 'geojson')).toBe(
-        'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0.geojson'
+        'https://foobar.hub.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest.geojson'
       )
       expect(getDownloadUrl(datasetSR, 'csv')).toBe(
-        'https://foobar.hub.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0.csv?outSR=%7B%22latestWkid%22%3A8374%2C%22wkid%22%3A4325%7D'
+        'https://foobar.hub.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest.csv?outSR=%7B%22latestWkid%22%3A8374%2C%22wkid%22%3A4325%7D'
       )
     })
   
     it('getOgcUrl()', function() {
-      const dataset = getDcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl)
+      const dataset = getDcatDataset(datasetFromApi, orgBaseUrl, orgTitle, siteUrl, siteModel)
   
       expect(getOgcUrl(dataset)).toBe(
         'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/services/Tahoe_Things/FeatureServer/WMSServer?request=GetCapabilities&service=WMS'
@@ -108,8 +110,8 @@ describe('getDcatDataset', () => {
       hubDatasetWFS.supportedExtensions = 'WFSServer'
       hubDatasetWMS.supportedExtensions = 'WMSServer'
   
-      const dcatDatasetWFS = getDcatDataset(hubDatasetWFS, orgBaseUrl, orgTitle, siteUrl)
-      const dcatDatasetWMS = getDcatDataset(hubDatasetWMS, orgBaseUrl, orgTitle, siteUrl)
+      const dcatDatasetWFS = getDcatDataset(hubDatasetWFS, orgBaseUrl, orgTitle, siteUrl, siteModel)
+      const dcatDatasetWMS = getDcatDataset(hubDatasetWMS, orgBaseUrl, orgTitle, siteUrl, siteModel)
   
       expect(supportsWFS(dcatDatasetWFS)).toBeTruthy()
       expect(supportsWMS(dcatDatasetWFS)).toBeFalsy()

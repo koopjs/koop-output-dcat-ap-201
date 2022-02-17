@@ -4,6 +4,7 @@ import { defaultFormatTemplate }  from '../default-format-template';
 const dataset: any = {
   landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0',
   id: '0',
+  access: 'public',
   name: 'Jules Goes The Distance',
   description:
     'Create your own initiative by combining existing applications with a custom site. Use this initiative to form teams around a problem and invite your community to participate.',
@@ -227,5 +228,17 @@ describe('formatDcatDataset', () => {
 
     expect(dist).toBeTruthy();
     expect(dist).toBe('OGC WMS');
+  });
+
+  it('Proxied CSV DCAT distributions are generated', function () {
+    const proxiedCSVDataset = {
+      ...dataset,
+      type: 'CSV',
+      size: 1,
+      url: null,
+    };
+    const result = JSON.parse(formatDcatDataset(proxiedCSVDataset, defaultFormatTemplate));
+    expect(result['dcat:distribution']).toHaveLength(3);
+    expect(result['dcat:distribution'][2]['dct:title']).toBe('CSV');
   });
 });
