@@ -110,9 +110,14 @@ export = class OutputDcatAp201 {
         env === 'prod' ? '' : env
       }.arcgis.com`;
 
+      // TODO: We only pass in hostname because some site item urls are out of sync, causing invalid urls for
+      // landingPage and identifier. If we can resolve the syncing issues, we can omit hostname and just use
+      // the absolute url we get from getContentSiteUrls()
+
       const { dcatStream, dependencies } = getDataStreamDcatAp201({
         domainRecord,
-        siteItem: siteModel.item,
+        siteUrl: req.hostname,
+        siteModel,
         orgBaseUrl,
         customFormatTemplate: dcatConfig
       });

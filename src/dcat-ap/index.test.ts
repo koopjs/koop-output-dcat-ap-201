@@ -3,6 +3,7 @@ import { IItem } from '@esri/arcgis-rest-portal';
 import {
   cloneObject,
   IDomainEntry,
+  IModel,
 } from '@esri/hub-common';
 import { readableFromArray, streamToString } from '../test-helpers/stream-utils';
 import { getDataStreamDcatAp201 } from './';
@@ -15,7 +16,13 @@ async function generateDcatFeed(
   orgBaseUrl = 'https://qa-pre-a-hub.mapsqa.arcgis.com',
   customFormatTemplate?
 ) {
-  const { dcatStream, dependencies } = getDataStreamDcatAp201({ domainRecord, siteItem, orgBaseUrl, customFormatTemplate });
+  const { dcatStream, dependencies } = getDataStreamDcatAp201({
+    domainRecord, 
+    orgBaseUrl, 
+    customFormatTemplate,
+    siteModel: { item: siteItem } as unknown as IModel,
+    siteUrl: siteItem.url // item.url isn't always accurate, but works for this test
+  });
 
   const docStream = readableFromArray(datasets); // no datasets since we're just checking the catalog
   const feedString = await streamToString(docStream.pipe(dcatStream));
@@ -219,7 +226,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const chk1 = feed['dcat:dataset'][0];
 
     expect(chk1['@type']).toEqual('dcat:Dataset');
-    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
     expect(chk1['dct:title']).toEqual('A Nifty Title');
     expect(chk1['dct:description']).toEqual('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>');
     expect(chk1['dcat:contactPoint']).toStrictEqual({
@@ -231,7 +238,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
     expect(chk1['dcat:theme']).toEqual('geospatial');
     expect(chk1['dct:accessRights']).toEqual('public');
-    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
     expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
     expect(chk1['dct:provenance']).toEqual('Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)');
     expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
@@ -269,7 +276,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const chk1 = feed['dcat:dataset'][0];
 
     expect(chk1['@type']).toEqual('dcat:Dataset');
-    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
     expect(chk1['dct:title']).toEqual('Tahoe places of interest');
     expect(chk1['dct:description']).toEqual('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>');
     expect(chk1['dcat:contactPoint']).toStrictEqual({
@@ -281,7 +288,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
     expect(chk1['dcat:theme']).toEqual('geospatial');
     expect(chk1['dct:accessRights']).toEqual('public');
-    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
     expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
     expect(chk1['dct:provenance']).toEqual('Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)');
     expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
@@ -322,7 +329,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const chk1 = feed['dcat:dataset'][0];
 
     expect(chk1['@type']).toEqual('dcat:Dataset');
-    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['@id']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
     expect(chk1['dct:title']).toEqual('Tahoe places of interest');
     expect(chk1['dct:description']).toEqual('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>');
     expect(chk1['dcat:contactPoint']).toStrictEqual({
@@ -334,7 +341,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
     expect(chk1['dcat:theme']).toEqual('geospatial');
     expect(chk1['dct:accessRights']).toEqual('public');
-    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/f4bcc1035b7d46cba95e977f4affb6be_0');
+    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
     expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
     expect(chk1['dct:provenance']).toEqual('');
     expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
@@ -344,6 +351,9 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
   it('reports default dependencies when no custom format provided', async () => {
     const expected = [
       'id',
+      'access',
+      'size',
+      'slug',
       'url',
       'owner',
       'name',
@@ -367,6 +377,9 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
   it('reports custom dependencies when custom format provided', async () => {
     const expected = [
       'id',
+      'access',
+      'size',
+      'slug',
       'url',
       'owner',
       'name',

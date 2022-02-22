@@ -1,19 +1,24 @@
-import { IItem } from '@esri/arcgis-rest-portal';
-import { IDomainEntry } from '@esri/hub-common';
+import { IDomainEntry, IModel } from '@esri/hub-common';
 import { defaultCalculatedFields, defaultRequiredFields, getDcatDataset } from './dcat-dataset';
 import { DatasetFormatTemplate, formatDcatCatalog, formatDcatDataset, mergeWithDefaultFormatTemplate } from './dcat-formatters';
 import { FeedFormatterStream } from './feed-formatter-stream';
 import { listDependencies } from 'adlib';
 
 interface IDcatAPOptions {
-  siteItem: IItem;
+  siteUrl: string, // can't currently derive from siteModel because some site item urls are out of sync
+  siteModel: IModel;
   domainRecord: IDomainEntry,
   orgBaseUrl: string;
   customFormatTemplate?: DatasetFormatTemplate
 }
 
 export function getDataStreamDcatAp201(options: IDcatAPOptions) {
-  const catalogStr = formatDcatCatalog({ ...options });
+  const catalogStr = formatDcatCatalog({ 
+    siteItem: options.siteModel.item,
+    domainRecord: options.domainRecord,
+    orgBaseUrl: options.orgBaseUrl,
+  });
+
   // lop off the "\n}"
   const header = `${catalogStr.substr(
     0,
@@ -24,7 +29,13 @@ export function getDataStreamDcatAp201(options: IDcatAPOptions) {
   
   const datasetFormatTemplate = mergeWithDefaultFormatTemplate(options.customFormatTemplate);
   const formatFn = (chunk) => {
-    const dcatDataset = getDcatDataset(chunk, options.orgBaseUrl, options.domainRecord.orgTitle, options.siteItem.url);
+    const dcatDataset = getDcatDataset(
+      chunk, 
+      options.orgBaseUrl, 
+      options.domainRecord.orgTitle, 
+      options.siteUrl,
+      options.siteModel
+    );
     return formatDcatDataset(dcatDataset, datasetFormatTemplate);
   };
 

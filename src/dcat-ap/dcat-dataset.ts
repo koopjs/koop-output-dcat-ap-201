@@ -3,10 +3,14 @@ import { localeToLang } from './dcat-formatters';
 import * as _ from 'lodash';
 import { isPage } from '@esri/hub-sites';
 import { UserSession } from '@esri/arcgis-rest-auth';
+import { IModel, datasetToContent, DatasetResource, getContentSiteUrls, IHubRequestOptions, getProxyUrl, datasetToItem } from '@esri/hub-common';
 
 // Required fields from the API
 export const defaultRequiredFields = [
   'id',
+  'access', // needed for proxied csv's
+  'size', // needed for proxied csv's
+  'slug', // needed for landingPage
   'url',
   'owner',
   'name',
@@ -33,9 +37,16 @@ export const defaultCalculatedFields = [
   'provenance'
 ];
 
-export function getDcatDataset(hubDataset: any, orgBaseUrl: string, orgTitle: string, siteUrl: string) {
+export function getDcatDataset(hubDataset: any, orgBaseUrl: string, orgTitle: string, siteUrl: string, siteModel: IModel) {
+  const content = datasetToContent({ 
+    id: hubDataset.id, 
+    attributes: hubDataset
+  } as DatasetResource);
+  const { relative: relativePath } = getContentSiteUrls(content, siteModel);
+  const landingPage = siteUrl.startsWith('https://') ? siteUrl + relativePath : `https://${siteUrl}${relativePath}`;
+  
   return Object.assign({}, hubDataset, {
-    landingPage: `${siteUrl}/datasets/${hubDataset.id}`,
+    landingPage,
     ownerUri: getUserUrl({
         portal: `${orgBaseUrl}/sharing/rest`,
         username: hubDataset.owner
@@ -67,6 +78,14 @@ function getDatasetKeyword(dataset: any) {
 
 // TODO: Should we test these individually?
 export const isFeatureLayer = (dcatDataset: any) => /_/.test(dcatDataset.id);
+export const isProxiedCSV = (dcatDataset: any) => {
+  const requestOptions: IHubRequestOptions = { isPortal: false };
+  const item = datasetToItem({ 
+    id: dcatDataset.id, 
+    attributes: dcatDataset
+  } as DatasetResource);
+  return !!getProxyUrl(item, requestOptions);
+};
 export const hasGeometryType = (dcatDataset: any) => !!dcatDataset.geometryType;
 export const supportsWFS = (dcatDataset: any) => _.get(dcatDataset, 'supportedExtensions', []).includes('WFSServer');
 export const supportsWMS = (dcatDataset: any) => _.get(dcatDataset, 'supportedExtensions', []).includes(('WMSServer'));

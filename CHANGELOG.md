@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## Unreleased
+Added
+- Distributions for proxied CSVs now include a csv distribution [#15](https://github.com/koopjs/koop-output-dcat-ap-201/pull/15)
+
 ## 1.5.0
 Added
 - Empty strings as fallback values for non-editable fields [#13](https://github.com/koopjs/koop-output-dcat-ap-201/pull/14)
