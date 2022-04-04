@@ -29,6 +29,11 @@ export type DatasetFormatTemplate = Record<string, any>;
  * Formats a single dataset object as a 'dcat:Dataset'
  */
 export function formatDcatDataset(dcatDataset: any, template: DatasetFormatTemplate) {
+  // Override hub.js default license value of 'none'
+  if (dcatDataset.license === 'none') {
+    dcatDataset.license = null;
+  }
+  
   const transforms: TransformsList = {
     toISO (_key, val) {
       return new Date(val).toISOString();

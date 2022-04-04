@@ -63,6 +63,54 @@ describe('formatDcatDataset', () => {
     expect(result['dcat:distribution']).toBeTruthy();
   });
 
+  it('DCAT dataset has overriden license', function () {
+    const expectedResult = {
+      '@type': 'dcat:Dataset',
+      '@id': dataset.landingPage,
+      'dct:title': dataset.name,
+      'dct:description': dataset.description,
+      'dcat:contactPoint': {
+        '@id': dataset.ownerUri,
+        '@type': 'Contact',
+        'vcard:fn': dataset.owner,
+        'vcard:hasEmail': dataset.orgContactEmail,
+      },
+      'dct:publisher': dataset.orgTitle,
+      'dcat:theme': 'geospatial',
+      'dct:accessRights': 'public',
+      'dct:identifier': dataset.landingPage,
+      'dct:language': {
+        '@id': `lang:${dataset.language.toUpperCase()}`,
+      },
+      'dcat:keyword': dataset.keyword,
+      'dct:provenance': dataset.provenance,
+      'dct:issued': dataset.issuedDateTime,
+      'dct.license': 'a-common-license'
+    };
+
+    const datasetWithLicense = { ...dataset, license: 'none' }
+    const template = { ...defaultFormatTemplate, 'dct.license': '{{license || a-common-license}}'}
+    const result = JSON.parse(formatDcatDataset(datasetWithLicense, template));
+
+    expect(result['@type']).toBe(expectedResult['@type']);
+    expect(result['@id']).toBe(expectedResult['@id']);
+    expect(result['dct:title']).toBe(expectedResult['dct:title']);
+    expect(result['dct:description']).toBe(expectedResult['dct:description']);
+    expect(result['dcat:contactPoint']).toEqual(
+      expectedResult['dcat:contactPoint'],
+    );
+    expect(result['dct:publisher']).toBe(expectedResult['dct:publisher']);
+    expect(result['dcat:theme']).toBe(expectedResult['dcat:theme']);
+    expect(result['dct:accessRights']).toBe(expectedResult['dct:accessRights']);
+    expect(result['dct:identifier']).toBe(expectedResult['dct:identifier']);
+    expect(result['dct:language']).toEqual(expectedResult['dct:language']);
+    expect(result['dcat:keyword']).toEqual(expectedResult['dcat:keyword']);
+    expect(result['dct:provenance']).toBe(expectedResult['dct:provenance']);
+    expect(result['dct:issued']).toBe(expectedResult['dct:issued']);
+    expect(result['dcat:distribution']).toBeTruthy();
+    expect(result['dct.license']).toBe('a-common-license');
+  });
+
   it('DCAT language node empty if no language', function () {
     const withoutLanguage = { ...dataset, language: null };
     const result = JSON.parse(formatDcatDataset(withoutLanguage, defaultFormatTemplate));
