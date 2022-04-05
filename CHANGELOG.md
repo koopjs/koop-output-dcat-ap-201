@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.6.1
+Fixed
+- License defaults now properly work [#16](https://github.com/koopjs/koop-output-dcat-ap-201/pull/16)
+
 ## 1.6.0
 Added
 - Distributions for proxied CSVs now include a csv distribution [#15](https://github.com/koopjs/koop-output-dcat-ap-201/pull/15)
