@@ -20,6 +20,9 @@ describe('getDcatDataset', () => {
     expect(dataset.landingPage).toBe(
       'https://foobar.hub.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest'
     )
+    expect(dataset.downloadLink).toBe(
+      'https://foobar.hub.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest'
+    )
     expect(dataset.name).toBe('Tahoe places of interest')
     expect(dataset.description).toBe('Description. Here be Tahoe things. You can do a lot here. Here are some more words. And a few more.<div><br /></div><div>with more words</div><div><br /></div><div>adding a few more to test how long it takes for our jobs to execute.</div><div><br /></div><div>Tom was here!</div>')
     expect(dataset.owner).toBe('thervey_qa_pre_a_hub')

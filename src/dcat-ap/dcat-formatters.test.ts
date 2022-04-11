@@ -121,7 +121,8 @@ describe('formatDcatDataset', () => {
   it('DCAT distributions have correct format', function () {
     const distDataset = {
       ...dataset,
-      landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0',
+      landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/maps/0_0',
+      downloadLink: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0',
       id: '0_0',
       geometryType: 'point',
       supportedExtensions: ['WFSServer', 'WMSServer']
@@ -130,7 +131,7 @@ describe('formatDcatDataset', () => {
       html: {
         '@type': 'dcat:Distribution',
         'dcat:accessUrl':
-          'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0',
+          'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/maps/0_0',
         'dct:format': {
           '@id': 'ftype:HTML',
         },
