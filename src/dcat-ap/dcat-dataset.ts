@@ -44,9 +44,11 @@ export function getDcatDataset(hubDataset: any, orgBaseUrl: string, orgTitle: st
   } as DatasetResource);
   const { relative: relativePath } = getContentSiteUrls(content, siteModel);
   const landingPage = siteUrl.startsWith('https://') ? siteUrl + relativePath : `https://${siteUrl}${relativePath}`;
-  
+  const downloadLink = siteUrl.startsWith('https://') ? `${siteUrl}/datasets/${content.identifier}` : `https://${siteUrl}/datasets/${content.identifier}`;
+
   return Object.assign({}, hubDataset, {
     landingPage,
+    downloadLink,
     ownerUri: getUserUrl({
         portal: `${orgBaseUrl}/sharing/rest`,
         username: hubDataset.owner
@@ -99,6 +101,6 @@ export const getDownloadUrl = (dcatDataset: any, format: 'geojson'|'kml'|'csv'|'
       queryStr = `?outSR=${encodeURIComponent(outSR)}`;
     }
   }
-  return `${dcatDataset.landingPage}.${format}${queryStr}`;
+  return `${dcatDataset.downloadLink}.${format}${queryStr}`;
 };
 export const getOgcUrl = (dcatDataset: any, type: 'WMS'|'WFS' = 'WMS') => dcatDataset.url.replace(/rest\/services/i, 'services').replace(/\d+$/, `${type}Server?request=GetCapabilities&service=${type}`);
