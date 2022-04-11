@@ -44,7 +44,7 @@ export function getDcatDataset(hubDataset: any, orgBaseUrl: string, orgTitle: st
   } as DatasetResource);
   const { relative: relativePath } = getContentSiteUrls(content, siteModel);
   const landingPage = siteUrl.startsWith('https://') ? siteUrl + relativePath : `https://${siteUrl}${relativePath}`;
-  const downloadLink = siteUrl.startsWith('https://') ? `${siteUrl}/datasets/${hubDataset.slug}` : `https://${siteUrl}/datasets/${hubDataset.slug}`;
+  const downloadLink = siteUrl.startsWith('https://') ? `${siteUrl}/datasets/${content.identifier}` : `https://${siteUrl}/datasets/${content.identifier}`;
 
   return Object.assign({}, hubDataset, {
     landingPage,
