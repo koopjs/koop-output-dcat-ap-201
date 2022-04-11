@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.6.2
+Fixed
+- Access Urls for downloadable distributions have corrected url [#17](https://github.com/koopjs/koop-output-dcat-ap-201/pull/17)
+
 ## 1.6.1
 Fixed
 - License defaults now properly work [#16](https://github.com/koopjs/koop-output-dcat-ap-201/pull/16)
