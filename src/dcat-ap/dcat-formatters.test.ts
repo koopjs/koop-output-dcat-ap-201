@@ -118,16 +118,8 @@ describe('formatDcatDataset', () => {
     expect(result['dct:language']).toBe('');
   });
 
-  it('DCAT distributions have correct format', function () {
-    const distDataset = {
-      ...dataset,
-      landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/maps/0_0',
-      downloadLink: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0',
-      id: '0_0',
-      geometryType: 'point',
-      supportedExtensions: ['WFSServer', 'WMSServer']
-    };
-    const expectedResult = {
+  describe('distributions', () => {
+    const distributions = {
       html: {
         '@type': 'dcat:Distribution',
         'dcat:accessUrl':
@@ -203,91 +195,154 @@ describe('formatDcatDataset', () => {
         'dct:title': 'OGC WMS',
       },
     };
-    const result = JSON.parse(formatDcatDataset(distDataset, defaultFormatTemplate));
-    expect(result['dcat:distribution'][0]).toEqual(expectedResult.html);
-    expect(result['dcat:distribution'][1]).toEqual(expectedResult.restAPI);
-    expect(result['dcat:distribution'][2]).toEqual(expectedResult.geoJSON);
-    expect(result['dcat:distribution'][3]).toEqual(expectedResult.csv);
-    expect(result['dcat:distribution'][4]).toEqual(expectedResult.wfs);
-    expect(result['dcat:distribution'][5]).toEqual(expectedResult.kml);
-    expect(result['dcat:distribution'][6]).toEqual(expectedResult.zip);
-    expect(result['dcat:distribution'][7]).toEqual(expectedResult.wms);
-  });
 
-  it('basic DCAT distributions are generated', function () {
-    const result = JSON.parse(formatDcatDataset(dataset, defaultFormatTemplate));
-    const dist1 = result['dcat:distribution'][0]['dct:title'];
-    const dist2 = result['dcat:distribution'][1]['dct:title'];
+    const getDistributions = (dataset: any, template: any) => {
+      const formattedDataset = JSON.parse(
+        formatDcatDataset(dataset, template)
+      );
+      return formattedDataset['dcat:distribution'];
+    }
 
-    expect(dist2).toBeTruthy();
-    expect(dist1).toBe('ArcGIS Hub Dataset');
-    expect(dist2).toBe('ArcGIS GeoService');
-  });
-
-  it('FeatureLayer DCAT distributions are generated', function () {
-    const featureLayerDataset = {
-      ...dataset,
-      id: '0_0',
-    };
-    const result = JSON.parse(formatDcatDataset(featureLayerDataset, defaultFormatTemplate));
-    const dist1 = result['dcat:distribution'][2]['dct:title'];
-    const dist2 = result['dcat:distribution'][3]['dct:title'];
-
-    expect(dist2).toBeTruthy();
-    expect(dist1).toBe('GeoJSON');
-    expect(dist2).toBe('CSV');
-  });
-
-  it('FeatureLayer DCAT distributions with available geometryType are generated', function () {
-    const featureLayerDataset = {
-      ...dataset,
-      isFeatureLayer: true,
-      hasGeometryType: true,
-      id: '0_0',
-      geometryType: 'point',
-    };
-    const result = JSON.parse(formatDcatDataset(featureLayerDataset, defaultFormatTemplate));
-    const dist1 = result['dcat:distribution'][4]['dct:title'];
-    const dist2 = result['dcat:distribution'][5]['dct:title'];
-
-    expect(dist2).toBeTruthy();
-    expect(dist1).toBe('KML');
-    expect(dist2).toBe('ZIP');
-  });
-
-  it('DCAT distributions include WFS when supported', function () {
-    const WFSDataset = { 
-      ...dataset,
-      supportedExtensions: ['WFSServer']
-    };
-    const result = JSON.parse(formatDcatDataset(WFSDataset, defaultFormatTemplate));
-    const dist = result['dcat:distribution'][2]['dct:title'];
-
-    expect(dist).toBeTruthy();
-    expect(dist).toBe('OGC WFS');
-  });
-
-  it('DCAT distributions include WMS when supported', function () {
-    const WMSDataset = { 
-      ...dataset,
-      supportedExtensions: ['WMSServer']
-    };
-    const result = JSON.parse(formatDcatDataset(WMSDataset, defaultFormatTemplate));
-    const dist = result['dcat:distribution'][2]['dct:title'];
-
-    expect(dist).toBeTruthy();
-    expect(dist).toBe('OGC WMS');
-  });
-
-  it('Proxied CSV DCAT distributions are generated', function () {
-    const proxiedCSVDataset = {
-      ...dataset,
-      type: 'CSV',
-      size: 1,
-      url: null,
-    };
-    const result = JSON.parse(formatDcatDataset(proxiedCSVDataset, defaultFormatTemplate));
-    expect(result['dcat:distribution']).toHaveLength(3);
-    expect(result['dcat:distribution'][2]['dct:title']).toBe('CSV');
+    it('All DCAT distributions have correct format', function () {
+      const distDataset = {
+        ...dataset,
+        landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/maps/0_0',
+        downloadLink: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0',
+        id: '0_0',
+        geometryType: 'point',
+        supportedExtensions: ['WFSServer', 'WMSServer']
+      };
+      
+      const result = JSON.parse(formatDcatDataset(distDataset, defaultFormatTemplate));
+      expect(result['dcat:distribution'][0]).toEqual(distributions.html);
+      expect(result['dcat:distribution'][1]).toEqual(distributions.restAPI);
+      expect(result['dcat:distribution'][2]).toEqual(distributions.geoJSON);
+      expect(result['dcat:distribution'][3]).toEqual(distributions.csv);
+      expect(result['dcat:distribution'][4]).toEqual(distributions.wfs);
+      expect(result['dcat:distribution'][5]).toEqual(distributions.kml);
+      expect(result['dcat:distribution'][6]).toEqual(distributions.zip);
+      expect(result['dcat:distribution'][7]).toEqual(distributions.wms);
+    });
+  
+    it('basic DCAT distributions are generated', function () {
+      const result = getDistributions(dataset, defaultFormatTemplate);
+      expect(result).toHaveLength(2);
+      expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+    });
+  
+    it('FeatureLayer DCAT distributions are generated', function () {
+      const featureLayerDataset = {
+        ...dataset,
+        id: '0_0',
+      };
+      const result = getDistributions(featureLayerDataset, defaultFormatTemplate);
+      expect(result).toHaveLength(4);
+      expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+      expect(result[2]['dct:title']).toEqual(distributions.geoJSON['dct:title']);
+      expect(result[3]['dct:title']).toEqual(distributions.csv['dct:title']);
+    });
+  
+    it('FeatureLayer DCAT distributions with available geometryType are generated', function () {
+      const featureLayerDataset = {
+        ...dataset,
+        isFeatureLayer: true,
+        hasGeometryType: true,
+        id: '0_0',
+        geometryType: 'point',
+      };
+      const result = getDistributions(featureLayerDataset, defaultFormatTemplate);
+      expect(result).toHaveLength(6);
+      expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+      expect(result[2]['dct:title']).toEqual(distributions.geoJSON['dct:title']);
+      expect(result[3]['dct:title']).toEqual(distributions.csv['dct:title']);
+      expect(result[4]['dct:title']).toEqual(distributions.kml['dct:title']);
+      expect(result[5]['dct:title']).toEqual(distributions.zip['dct:title']);
+    });
+  
+    it('DCAT distributions include WFS when supported', function () {
+      const WFSDataset = { 
+        ...dataset,
+        supportedExtensions: ['WFSServer']
+      };
+      const result = getDistributions(WFSDataset, defaultFormatTemplate);
+      expect(result).toHaveLength(3);
+      expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+      expect(result[2]['dct:title']).toEqual(distributions.wfs['dct:title']);
+    });
+  
+    it('DCAT distributions include WMS when supported', function () {
+      const WMSDataset = { 
+        ...dataset,
+        supportedExtensions: ['WMSServer']
+      };
+      const result = getDistributions(WMSDataset, defaultFormatTemplate);
+      expect(result).toHaveLength(3);
+      expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+      expect(result[2]['dct:title']).toEqual(distributions.wms['dct:title']);
+    });
+  
+    it('Proxied CSV DCAT distributions are generated', function () {
+      const proxiedCSVDataset = {
+        ...dataset,
+        type: 'CSV',
+        size: 1,
+        url: null,
+      };
+      const result = getDistributions(proxiedCSVDataset, defaultFormatTemplate);
+      expect(result).toHaveLength(3);
+      expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+      expect(result[2]['dct:title']).toEqual(distributions.csv['dct:title']);
+    });
+  
+    it('Custom distributions are generated when template contains non-empty array', function () {
+      const customDistributionsTemplates = {
+        ...defaultFormatTemplate,
+        'dcat:distribution': [
+          {
+            myKey: '{{name}}',
+            myConstant: 'constant'
+          }
+        ]
+      };
+      const result = getDistributions(dataset, customDistributionsTemplates);
+      expect(result).toHaveLength(3);
+      expect(result[0]).toEqual({
+        myKey: 'Jules Goes The Distance',
+        myConstant: 'constant'
+      });
+      expect(result[1]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[2]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+    });
+  
+    it('Custom distributions are not generated when template contains empty array', function () {
+      const customDistributionsTemplates = {
+        ...defaultFormatTemplate,
+        'dcat:distribution': [],
+      }
+      const result = getDistributions(dataset, customDistributionsTemplates);
+      expect(result).toHaveLength(2);
+      expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+    });
+  
+    it('Custom distributions are not generated when template contains an object', function () {
+      const customDistributionsTemplates = {
+        ...defaultFormatTemplate,
+        'dcat:distribution': {
+          myKey: '{{name}}',
+          myConstant: 'constant'
+        },
+      }
+      const result = getDistributions(dataset, customDistributionsTemplates);
+      expect(result).toHaveLength(2);
+      expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
+      expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
+    });
   });
 });

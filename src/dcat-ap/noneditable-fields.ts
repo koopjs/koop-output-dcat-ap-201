@@ -12,5 +12,4 @@ export const nonEditableFieldPaths = [
   'dct:language',
   'dcat:contactPoint[@id]',
   'dcat:contactPoint[@type]',
-  'dcat:distribution'
 ];
