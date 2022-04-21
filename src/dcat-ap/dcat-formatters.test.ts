@@ -213,15 +213,15 @@ describe('formatDcatDataset', () => {
         supportedExtensions: ['WFSServer', 'WMSServer']
       };
       
-      const result = JSON.parse(formatDcatDataset(distDataset, defaultFormatTemplate));
-      expect(result['dcat:distribution'][0]).toEqual(distributions.html);
-      expect(result['dcat:distribution'][1]).toEqual(distributions.restAPI);
-      expect(result['dcat:distribution'][2]).toEqual(distributions.geoJSON);
-      expect(result['dcat:distribution'][3]).toEqual(distributions.csv);
-      expect(result['dcat:distribution'][4]).toEqual(distributions.wfs);
-      expect(result['dcat:distribution'][5]).toEqual(distributions.kml);
-      expect(result['dcat:distribution'][6]).toEqual(distributions.zip);
-      expect(result['dcat:distribution'][7]).toEqual(distributions.wms);
+      const result = getDistributions(distDataset, defaultFormatTemplate);
+      expect(result[0]).toEqual(distributions.html);
+      expect(result[1]).toEqual(distributions.restAPI);
+      expect(result[2]).toEqual(distributions.geoJSON);
+      expect(result[3]).toEqual(distributions.csv);
+      expect(result[4]).toEqual(distributions.wfs);
+      expect(result[5]).toEqual(distributions.kml);
+      expect(result[6]).toEqual(distributions.zip);
+      expect(result[7]).toEqual(distributions.wms);
     });
   
     it('basic DCAT distributions are generated', function () {
