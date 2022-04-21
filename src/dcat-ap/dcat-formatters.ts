@@ -46,9 +46,10 @@ export function formatDcatDataset(dcatDataset: any, template: DatasetFormatTempl
 
   const formattedDataset = adlib(template, dcatDataset, transforms);
 
-  setLeftoverInterpolations(formattedDataset);
+  // reset uninterpolated, non-editable fields since customers cannot remove them
+  resetUninterpolatedPaths(formattedDataset, nonEditableFieldPaths);
 
-  formattedDataset['dcat:distribution'] = generateDistributions(dcatDataset);
+  formattedDataset['dcat:distribution'] = generateDistributions(dcatDataset, formattedDataset);
 
   if (dcatDataset.language) {
     formattedDataset['dct:language'] = {
@@ -113,7 +114,7 @@ function indent(str: string, nTabs = 1) {
  * See https://github.com/SEMICeu/dcat-ap_shacl/blob/master/shacl/dcat-ap-mdr-vocabularies.shapes.ttl
  * for validations.
  */
-function generateDistributions(dataset: any) {
+function generateStandardDistributions(dataset: any) {
   const distributionFns = [];
 
   // always add the Hub landing page
@@ -143,6 +144,24 @@ function generateDistributions(dataset: any) {
   }
 
   return distributionFns.map((fn) => fn(dataset));
+}
+
+/**
+ * Returns all the distributions for a given dataset.
+ * 
+ * If formattedDataset includes an array of custom distributions, 
+ * they will be prepended onto the result. 
+ * 
+ * @param dcatDataset a dataset from the Hub API that has been processed by getDcatDataset()
+ * @param formattedDataset the formatted output from adlib
+ */
+function generateDistributions(dcatDataset: any, formattedDataset: any) {
+  const customDistributions = _.isArray(formattedDataset['dcat:distribution']) 
+    ? formattedDataset['dcat:distribution'] 
+    : [];
+  const standardDistributions = generateStandardDistributions(dcatDataset);
+
+  return [...customDistributions, ...standardDistributions];
 }
 
 /**
@@ -290,10 +309,11 @@ export function mergeWithDefaultFormatTemplate(customTemplate?: DatasetFormatTem
 }
 
 /**
- * Overwrites templated values returned by adlib for non-editable fields
+ * If the value at each field path is an uninterpolated adlib string,
+ * change the field to the empty string.
  */
-function setLeftoverInterpolations(dataset) {
-  nonEditableFieldPaths.forEach(path => {
+function resetUninterpolatedPaths(dataset, fieldPaths) {
+  fieldPaths.forEach(path => {
     const value = _.get(dataset, path, '');
     if (typeof value === 'string' && value.match(/{{.+}}/)?.length) {
       _.set(dataset, path, '');
