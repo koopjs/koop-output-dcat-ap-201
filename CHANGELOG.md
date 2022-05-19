@@ -1,4 +1,8 @@
 # CHANGELOG.md
+## 1.7.1
+Fixed
+- Fixed type issue in underlying Hub.js dependency [#19](https://github.com/koopjs/koop-output-dcat-ap-201/pull/19)
+
 ## 1.7.0
 Added
 - If the `dcat:distribution` property of a site's dcat config is an array, those custom distributions will now be prepended to the distributions list [#18](https://github.com/koopjs/koop-output-dcat-ap-201/pull/18)
