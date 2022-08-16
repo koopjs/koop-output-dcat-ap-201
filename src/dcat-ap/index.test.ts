@@ -238,7 +238,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
     expect(chk1['dcat:theme']).toEqual('geospatial');
     expect(chk1['dct:accessRights']).toEqual('public');
-    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
+    expect(chk1['dct:identifier']).toEqual('https://www.arcgis.com/home/item.html?id=f4bcc1035b7d46cba95e977f4affb6be&sublayer=0');
     expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
     expect(chk1['dct:provenance']).toEqual('Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)');
     expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
@@ -264,7 +264,6 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
         'dct:publisher': '{{ Publisher Injection }}',
         'dcat:theme': '{{ Theme Injection }}',
         'dct:accessRights': '{{ Access Rights Injection }}',
-        'dct:identifier': '{{ Identifier Injection }}',
         'dcat:keyword': '{{ Keyword Injection }}',
         'dct:provenance': '{{ Provenance Injection }}',
         'dct:issued': '{{ Issued Injection}}',
@@ -288,7 +287,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
     expect(chk1['dcat:theme']).toEqual('geospatial');
     expect(chk1['dct:accessRights']).toEqual('public');
-    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
+    expect(chk1['dct:identifier']).toEqual('https://www.arcgis.com/home/item.html?id=f4bcc1035b7d46cba95e977f4affb6be&sublayer=0');
     expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
     expect(chk1['dct:provenance']).toEqual('Myndigheten för samhällsskydd och beredskap ( https://www.msb.se/ ); con terra ( https://www.conterra.de/); Esri (https://www.esri.com/en-us/arcgis/products/arcgis-for-inspire)');
     expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');
@@ -317,7 +316,6 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
         'dct:publisher': '{{ Publisher Injection }}',
         'dcat:theme': '{{ Theme Injection }}',
         'dct:accessRights': '{{ Access Rights Injection }}',
-        'dct:identifier': '{{ Identifier Injection }}',
         'dcat:keyword': '{{ Keyword Injection }}',
         'dct:provenance': '{{ Provenance Injection }}',
         'dct:issued': '{{ Issued Injection }}',
@@ -341,7 +339,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     expect(chk1['dct:publisher']).toEqual('QA Premium Alpha Hub');
     expect(chk1['dcat:theme']).toEqual('geospatial');
     expect(chk1['dct:accessRights']).toEqual('public');
-    expect(chk1['dct:identifier']).toEqual('https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest');
+    expect(chk1['dct:identifier']).toEqual('https://www.arcgis.com/home/item.html?id=f4bcc1035b7d46cba95e977f4affb6be&sublayer=0');
     expect(chk1['dcat:keyword']).toEqual(['some', 'keywords', 'from', 'metadata']);
     expect(chk1['dct:provenance']).toEqual('');
     expect(chk1['dct:issued']).toEqual('2021-04-19T13:30:24.055-04:00');

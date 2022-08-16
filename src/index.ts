@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import * as config from 'config';
 import * as _ from 'lodash';
 
 import {
@@ -16,10 +15,7 @@ import { IContentSearchRequest } from '@esri/hub-search';
 
 import { version } from '../package.json';
 import { getDataStreamDcatAp201 } from './dcat-ap';
-
-const portalUrl = config.has('arcgisPortal')
-  ? (config.get('arcgisPortal') as string)
-  : 'https://www.arcgis.com';
+import { portalUrl } from './config';
 
 let env: 'prod' | 'qa' | 'dev' = 'prod';
 if (/devext\.|mapsdev\./.test(portalUrl)) {
@@ -111,7 +107,7 @@ export = class OutputDcatAp201 {
       }.arcgis.com`;
 
       // TODO: We only pass in hostname because some site item urls are out of sync, causing invalid urls for
-      // landingPage and identifier. If we can resolve the syncing issues, we can omit hostname and just use
+      // hubLandingPage and identifier. If we can resolve the syncing issues, we can omit hostname and just use
       // the absolute url we get from getContentSiteUrls()
 
       const { dcatStream, dependencies } = getDataStreamDcatAp201({

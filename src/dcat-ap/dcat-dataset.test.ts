@@ -17,7 +17,10 @@ describe('getDcatDataset', () => {
     expect(dataset.url).toBe(
       'https://servicesqa.arcgis.com/Xj56SBi2udA78cC9/arcgis/rest/services/Tahoe_Things/FeatureServer/0'
     )
-    expect(dataset.landingPage).toBe(
+    expect(dataset.agoLandingPage).toBe(
+      'https://www.arcgis.com/home/item.html?id=f4bcc1035b7d46cba95e977f4affb6be&sublayer=0'
+    )
+    expect(dataset.hubLandingPage).toBe(
       'https://foobar.hub.arcgis.com/datasets/qa-pre-a-hub::tahoe-places-of-interest'
     )
     expect(dataset.downloadLink).toBe(
