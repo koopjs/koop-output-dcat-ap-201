@@ -2,7 +2,8 @@ import { formatDcatDataset } from './dcat-formatters';
 import { defaultFormatTemplate }  from '../default-format-template';
 
 const dataset: any = {
-  landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0',
+  agoLandingPage: 'https://www.arcgis.com/home/item.html&id=0',
+  hubLandingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0',
   id: '0',
   access: 'public',
   name: 'Jules Goes The Distance',
@@ -23,7 +24,7 @@ describe('formatDcatDataset', () => {
   it('DCAT dataset has correct format', function () {
     const expectedResult = {
       '@type': 'dcat:Dataset',
-      '@id': dataset.landingPage,
+      '@id': dataset.hubLandingPage,
       'dct:title': dataset.name,
       'dct:description': dataset.description,
       'dcat:contactPoint': {
@@ -35,7 +36,7 @@ describe('formatDcatDataset', () => {
       'dct:publisher': dataset.orgTitle,
       'dcat:theme': 'geospatial',
       'dct:accessRights': 'public',
-      'dct:identifier': dataset.landingPage,
+      'dct:identifier': dataset.agoLandingPage,
       'dct:language': {
         '@id': `lang:${dataset.language.toUpperCase()}`,
       },
@@ -66,7 +67,7 @@ describe('formatDcatDataset', () => {
   it('DCAT dataset has overriden license', function () {
     const expectedResult = {
       '@type': 'dcat:Dataset',
-      '@id': dataset.landingPage,
+      '@id': dataset.hubLandingPage,
       'dct:title': dataset.name,
       'dct:description': dataset.description,
       'dcat:contactPoint': {
@@ -78,7 +79,7 @@ describe('formatDcatDataset', () => {
       'dct:publisher': dataset.orgTitle,
       'dcat:theme': 'geospatial',
       'dct:accessRights': 'public',
-      'dct:identifier': dataset.landingPage,
+      'dct:identifier': dataset.agoLandingPage,
       'dct:language': {
         '@id': `lang:${dataset.language.toUpperCase()}`,
       },
@@ -206,7 +207,8 @@ describe('formatDcatDataset', () => {
     it('All DCAT distributions have correct format', function () {
       const distDataset = {
         ...dataset,
-        landingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/maps/0_0',
+        agoLandingPage: 'https://www.arcgis.com/home/item.html?id=0&sublayer=0',
+        hubLandingPage: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/maps/0_0',
         downloadLink: 'https://jules-goes-the-distance-qa-pre-a-hub.hubqa.arcgis.com/datasets/0_0',
         id: '0_0',
         geometryType: 'point',

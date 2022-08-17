@@ -5,7 +5,6 @@ export const nonEditableFieldPaths = [
   'dct:publisher',
   'dcat:theme',
   'dct:accessRights',
-  'dct:identifier',
   'dcat:keyword',
   'dct:provenance',
   'dct:issued',

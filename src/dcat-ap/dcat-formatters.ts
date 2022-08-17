@@ -170,7 +170,7 @@ function generateDistributions(dcatDataset: any, formattedDataset: any) {
 function getHubLandingPageDistribution(dataset: any) {
   return {
     '@type': 'dcat:Distribution',
-    'dcat:accessUrl': dataset.landingPage,
+    'dcat:accessUrl': dataset.hubLandingPage,
     'dct:format': {
       '@id': 'ftype:HTML',
     },

@@ -3,14 +3,15 @@ import { localeToLang } from './dcat-formatters';
 import * as _ from 'lodash';
 import { isPage } from '@esri/hub-sites';
 import { UserSession } from '@esri/arcgis-rest-auth';
-import { IModel, datasetToContent, DatasetResource, getContentSiteUrls, IHubRequestOptions, getProxyUrl, datasetToItem } from '@esri/hub-common';
+import { IModel, datasetToContent, DatasetResource, getContentSiteUrls, IHubRequestOptions, getProxyUrl, datasetToItem, parseDatasetId } from '@esri/hub-common';
+import { portalUrl } from '../config';
 
 // Required fields from the API
 export const defaultRequiredFields = [
   'id',
   'access', // needed for proxied csv's
   'size', // needed for proxied csv's
-  'slug', // needed for landingPage
+  'slug', // needed for hubLandingPage
   'url',
   'owner',
   'name',
@@ -28,7 +29,8 @@ export const defaultRequiredFields = [
 
 // Fields calculated from API Values
 export const defaultCalculatedFields = [
-  'landingPage',
+  'agoLandingPage',
+  'hubLandingPage',
   'ownerUri',
   'language',
   'keyword',
@@ -38,16 +40,25 @@ export const defaultCalculatedFields = [
 ];
 
 export function getDcatDataset(hubDataset: any, orgBaseUrl: string, orgTitle: string, siteUrl: string, siteModel: IModel) {
+  // Download and Hub Links must be generated from Content
   const content = datasetToContent({ 
     id: hubDataset.id, 
     attributes: hubDataset
   } as DatasetResource);
   const { relative: relativePath } = getContentSiteUrls(content, siteModel);
-  const landingPage = siteUrl.startsWith('https://') ? siteUrl + relativePath : `https://${siteUrl}${relativePath}`;
+  const hubLandingPage = siteUrl.startsWith('https://') ? siteUrl + relativePath : `https://${siteUrl}${relativePath}`;
   const downloadLink = siteUrl.startsWith('https://') ? `${siteUrl}/datasets/${content.identifier}` : `https://${siteUrl}/datasets/${content.identifier}`;
 
+  // AGO links must be generated from Dataset Records
+  const { itemId, layerId } = parseDatasetId(hubDataset.id);
+  let agoLandingPage = `${portalUrl}/home/item.html?id=${itemId}`;
+  if (layerId) {
+    agoLandingPage += `&sublayer=${layerId}`;
+  }
+
   return Object.assign({}, hubDataset, {
-    landingPage,
+    agoLandingPage,
+    hubLandingPage,
     downloadLink,
     ownerUri: getUserUrl({
         portal: `${orgBaseUrl}/sharing/rest`,
