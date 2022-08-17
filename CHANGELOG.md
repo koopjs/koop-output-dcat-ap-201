@@ -1,6 +1,6 @@
 # CHANGELOG.md
 
-## Unreleased
+## 1.8.0
 Added
 - dct:identifier is now a customizable attribute and defaults to the AGO home page for an item [#20](https://github.com/koopjs/koop-output-dcat-ap-201/pull/20)
 
