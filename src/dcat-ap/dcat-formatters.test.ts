@@ -346,5 +346,54 @@ describe('formatDcatDataset', () => {
       expect(result[0]['dct:title']).toEqual(distributions.html['dct:title']);
       expect(result[1]['dct:title']).toEqual(distributions.restAPI['dct:title']);
     });
+
+    it('adds distributions from metadata', () => {
+      const hubDataset = {
+        id: 'foo', // non-layer id
+        metadata: {
+          metadata: {
+            distInfo: {
+              distTranOps: {
+                onLineSrc: [
+                  {
+                    orName: 'Title 1',
+                    protocol: 'TTL',
+                    linkage: 'https://some-url.com',
+                    orDesc: 'Fun Description'
+                  },
+                  {
+                    orName: 'Title 2',
+                    // no protocol
+                    linkage: 'https://some-url.com',
+                    // no description
+                  }
+                ]
+              }
+            }
+          }
+        }
+      };
+
+      const result = getDistributions(hubDataset, defaultFormatTemplate);
+  
+      expect(result.length).toBe(4);
+      expect(result.slice(2)).toEqual([
+        {
+          '@type': 'dcat:Distribution',
+          title: 'Title 1',
+          format: 'TTL',
+          accessURL: 'https://some-url.com',
+          description: 'Fun Description'
+        },
+        {
+          '@type': 'dcat:Distribution',
+          title: 'Title 2',
+          format: null,
+          accessURL: 'https://some-url.com',
+          description: null
+        }
+      ])
+    });
+  
   });
 });
