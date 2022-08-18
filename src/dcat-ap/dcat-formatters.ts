@@ -143,7 +143,29 @@ function generateStandardDistributions(dataset: any) {
     distributionFns.push(getOGCWMSDistribution);
   }
 
-  return distributionFns.map((fn) => fn(dataset));
+  const distributions = distributionFns.map(fn => fn(dataset));
+  const metadataDistributions = getMetadataDistributions(dataset);
+
+  return [...distributions, ...metadataDistributions];
+}
+
+function getMetadataDistributions (hubDataset: any) {
+  const distros = [];
+  const data = _.get(hubDataset, 'metadata.metadata.distInfo.distTranOps.onLineSrc');
+
+  if (Array.isArray(data)) {
+    for (const dist of data) {
+      distros.push({
+        '@type': 'dcat:Distribution',
+        title: dist.orName || null,
+        format: dist.protocol || null,
+        accessURL: dist.linkage || null,
+        description: dist.orDesc || null
+      });
+    }
+  }
+
+  return distros;
 }
 
 /**
