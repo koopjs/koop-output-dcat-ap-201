@@ -389,50 +389,6 @@ describe('Output Plugin', () => {
 
     it('Constructs a search request without a search text', async () => {
       // Change fetchSite's return value to include a custom dcat config
-      const customConfigSiteModel: IModel = _.cloneDeep(mockSiteModel);
-      customConfigSiteModel.data.feeds = {
-        dcatAP201: {
-          'dct:title': '{{name}}',
-          'dct:description': '{{description}}',
-          'dcat:contactPoint': {
-              'vcard:fn': '{{owner}}',
-              'vcard:hasEmail': '{{orgContactEmail}}',
-          },
-          'dct:newAttribute': '{{path.to.attribute}}'
-        }
-      }
-      mockGetSite.mockResolvedValue(customConfigSiteModel);
-      [plugin, app] = buildPluginAndApp();
-
-      // A hack to extract the request object that is actually served
-      let servedRequest: any;
-      app._router.stack.pop();
-      app.get('/dcat', (async (req, res) => {
-        servedRequest = req;
-        await plugin.serve.bind(plugin)(req, res);
-      }));
-
-      await request(app)
-        .get('/dcat')
-        .set('host', siteHostName)
-        .query({ q: 'free text' })
-        .expect('Content-Type', /application\/json/)
-        .expect(200)
-        .expect(() => {
-          expect(mockGetDataStreamDcatAp201)
-            .toHaveBeenCalledWith({
-              domainRecord: mockDomainRecord,
-              siteModel: customConfigSiteModel,
-              siteUrl: siteHostName,
-              orgBaseUrl: 'https://qa-pre-a-hub.maps.arcgis.com',
-              customFormatTemplate: customConfigSiteModel.data.feeds.dcatAP201
-            });
-          expect(servedRequest.res.locals.searchRequest.filter.terms).toEqual('free text');
-        });
-    });
-
-    it('Constructs a search request using a search text', async () => {
-      // Change fetchSite's return value to include a custom dcat config
       const customConfigSiteModel: IModel = _.cloneDeep(mockSiteModel) as any;
       (customConfigSiteModel.data || {}).feeds = {
         dcatUS11: {
@@ -475,6 +431,50 @@ describe('Output Plugin', () => {
             customFormatTemplate: customConfigSiteModel.data.feeds.dcatAP201
           });
           expect(servedRequest.res.locals.searchRequest.filter.terms).toEqual(undefined);
+        });
+    });
+
+    it('Constructs a search request with search text', async () => {
+      // Change fetchSite's return value to include a custom dcat config
+      const customConfigSiteModel: IModel = _.cloneDeep(mockSiteModel);
+      customConfigSiteModel.data.feeds = {
+        dcatAP201: {
+          'dct:title': '{{name}}',
+          'dct:description': '{{description}}',
+          'dcat:contactPoint': {
+              'vcard:fn': '{{owner}}',
+              'vcard:hasEmail': '{{orgContactEmail}}',
+          },
+          'dct:newAttribute': '{{path.to.attribute}}'
+        }
+      }
+      mockGetSite.mockResolvedValue(customConfigSiteModel);
+      [plugin, app] = buildPluginAndApp();
+
+      // A hack to extract the request object that is actually served
+      let servedRequest: any;
+      app._router.stack.pop();
+      app.get('/dcat', (async (req, res) => {
+        servedRequest = req;
+        await plugin.serve.bind(plugin)(req, res);
+      }));
+
+      await request(app)
+        .get('/dcat')
+        .set('host', siteHostName)
+        .query({ q: 'free text' })
+        .expect('Content-Type', /application\/json/)
+        .expect(200)
+        .expect(() => {
+          expect(mockGetDataStreamDcatAp201)
+            .toHaveBeenCalledWith({
+              domainRecord: mockDomainRecord,
+              siteModel: customConfigSiteModel,
+              siteUrl: siteHostName,
+              orgBaseUrl: 'https://qa-pre-a-hub.maps.arcgis.com',
+              customFormatTemplate: customConfigSiteModel.data.feeds.dcatAP201
+            });
+          expect(servedRequest.res.locals.searchRequest.filter.terms).toEqual('free text');
         });
     });
 
