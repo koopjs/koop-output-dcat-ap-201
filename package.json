@@ -1,6 +1,6 @@
 {
   "name": "@koopjs/koop-output-dcat-ap-201",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "description": "A Koop output plugin for the DCAT-AP 2.0.1 specification",
   "main": "src/index.js",
   "engines": {

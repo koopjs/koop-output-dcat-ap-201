@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.9.0
+Added
+- ability to sort and text search the feed [#22](https://github.com/koopjs/koop-output-dcat-ap-201/pull/22)
+
 ## 1.8.1
 Fixed
 - Additional metadata now available as distribution [#21](https://github.com/koopjs/koop-output-dcat-ap-201/pull/21)
