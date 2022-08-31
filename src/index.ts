@@ -11,7 +11,7 @@ import {
   lookupDomain,
   RemoteServerError,
 } from '@esri/hub-common';
-import { IContentSearchRequest } from '@esri/hub-search';
+import { IContentSearchRequest, SortDirection } from '@esri/hub-search';
 
 import { version } from '../package.json';
 import { getDataStreamDcatAp201 } from './dcat-ap';
@@ -74,6 +74,15 @@ async function getApiTermsFromDependencies (dependencies: string[]) {
   }))));
 }
 
+/**
+ * Sort field map that connects English versions of sort fields
+ * to API sort field keys
+ */
+ const sortFieldMap = {
+  'Date Created': 'created',
+  'Date Modified': 'modified',
+};
+
 export = class OutputDcatAp201 {
   static type = 'output';
   static version = version;
@@ -130,8 +139,8 @@ export = class OutputDcatAp201 {
       }
   
       req.res.locals.searchRequest = id 
-        ? this.getDatasetSearchRequest({ id, portalUrl, fields: apiTerms })
-        : this.getCatalogSearchRequest({ catalog: siteCatalog, portalUrl, fields: apiTerms });
+        ? this.getDatasetSearchRequest({ id, fields: apiTerms })
+        : this.getCatalogSearchRequest({ req, catalog: siteCatalog, fields: apiTerms });
 
       const datasetStream = await this.getDatasetStream(req);
 
@@ -186,7 +195,6 @@ export = class OutputDcatAp201 {
 
   private getDatasetSearchRequest(opts: {
     id: string,
-    portalUrl: string,
     fields: string[]
   }): IContentSearchRequest {
     const searchRequest: IContentSearchRequest = {
@@ -201,8 +209,8 @@ export = class OutputDcatAp201 {
   }
 
   private getCatalogSearchRequest(opts: {
+    req: Request,
     catalog: any,
-    portalUrl: string,
     fields: string[]
   }): IContentSearchRequest {
     const searchRequest: IContentSearchRequest = {
@@ -212,10 +220,35 @@ export = class OutputDcatAp201 {
       },
       options: {
         portal: portalUrl,
-        fields: opts.fields ? opts.fields.join(',') : undefined
+        fields: opts.fields ? opts.fields.join(',') : undefined,
       },
     };
+
+    if (typeof _.get(opts, 'req.query.q') === 'string' && opts.req.query.q.length > 0) {
+      searchRequest.filter.terms = opts.req.query.q as string;
+    }
+
+    const sortOptions = this.getSortOptions(_.get(opts, 'req.query.sort', undefined));
+    if (sortOptions) {
+      searchRequest.options.sortField = sortOptions.sortField;
+      searchRequest.options.sortOrder = sortOptions.sortOrder;
+    }
     return searchRequest;
+  }
+
+  private getSortOptions(sortQuery: string): { sortField?: string; sortOrder?: SortDirection } {
+    if (typeof sortQuery !== 'string' || !sortQuery.length) {
+      return undefined;
+    }
+
+    const sortOptions = sortQuery.split('|');
+    
+    const sortField = sortOptions.length > 1 ? sortOptions[1] : sortFieldMap[sortOptions[0]];
+    const sortOrder = sortOptions.length > 2 ? sortOptions[2] as SortDirection : SortDirection.desc;
+    return {
+      sortField,
+      sortOrder,
+    };
   }
 
   private async getDatasetStream(req: Request) {
