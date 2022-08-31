@@ -217,14 +217,22 @@ export = class OutputDcatAp201 {
       filter: {
         group: opts.catalog.groups,
         orgid: opts.catalog.orgId,
-        terms: _.get(opts.req, 'query.q', undefined),
       },
       options: {
         portal: portalUrl,
         fields: opts.fields ? opts.fields.join(',') : undefined,
-        ...(this.getSortOptions(_.get(opts.req, 'query.sort', undefined)) || {}),
       },
     };
+
+    if (typeof _.get(opts, 'req.query.q') === 'string' && opts.req.query.q.length > 0) {
+      searchRequest.filter.terms = opts.req.query.q as string;
+    }
+
+    const sortOptions = this.getSortOptions(_.get(opts, 'req.query.sort', undefined));
+    if (sortOptions) {
+      searchRequest.options.sortField = sortOptions.sortField;
+      searchRequest.options.sortOrder = sortOptions.sortOrder;
+    }
     return searchRequest;
   }
 
