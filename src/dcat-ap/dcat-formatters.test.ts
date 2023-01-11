@@ -17,6 +17,7 @@ const dataset: any = {
   keyword: ['property', 'vacant', 'abandoned', 'revitalization'],
   provenance: 'provenance',
   issuedDateTime: 1498771743000,
+  modified: 1498771743000,
   url: 'https://sampleserver3.arcgisonline.com/arcgis/rest/services/Earthquakes/RecentEarthquakesRendered/MapServer/0',
 };
 
@@ -350,6 +351,7 @@ describe('formatDcatDataset', () => {
     it('adds distributions from metadata', () => {
       const hubDataset = {
         id: 'foo', // non-layer id
+        modified: 1498771743000,
         metadata: {
           metadata: {
             distInfo: {
