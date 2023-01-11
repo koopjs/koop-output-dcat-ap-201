@@ -18,5 +18,6 @@ export const defaultFormatTemplate: DatasetFormatTemplate = {
     'dcat:keyword': '{{keyword}}', // can't be overwritten
     'dct:provenance': '{{provenance}}', // can't be overwritten. won't be available if not INSPIRE metadata
     'dct:issued': '{{issuedDateTime}}', // can't be overwritten
+    'dct:modified': '{{modified:toISO}}',
     'dct:language': '', // can't be overwritten, object computed at runtime
 };
