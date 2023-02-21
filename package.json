@@ -44,9 +44,20 @@
     "release": "npm run build && npm publish ./build --access=public",
     "build:watch": "tsc -w -p tsconfig.release.json",
     "lint": "eslint . --ext .ts,.tsx",
-    "test": "jest --coverage",
+    "test": " jest --coverage --coverageReporters='json-summary'",
+    "make-badges": "coverage-badges",
     "test:watch": "jest --watch",
     "prepack": "cp ../README.md ../LICENSE ./"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "<rootDir>/packages/**/*.{tsx,ts}",
+      "!**/*.{js,d.ts}"
+    ],
+    "coverageReporters": [
+      "lcov",
+      "json-summary"
+    ]
   },
   "author": "Andrew Tate <atate@esri.com>",
   "license": "Apache-2.0",
@@ -59,6 +70,7 @@
     "@esri/hub-search": "^9.32.1",
     "@esri/hub-sites": "^9.32.1",
     "@esri/hub-teams": "^9.32.1",
+    "coverage-badges-cli": "^1.0.11",
     "lodash": "^4.17.21",
     "tslib": "~2.3.0"
   },
