@@ -23,19 +23,8 @@ export = class OutputDcatAp201 {
     res.set('Content-Type', 'application/json');
 
     try {
-
-      const { res: { locals: { feedTemplate } }, app: { locals: { feedTemplateTransformsDcatAp } } }: {
-        res?: {
-          locals?: {
-            feedTemplate?: any
-          }
-        }
-        app: {
-          locals: {
-            feedTemplateTransformsDcatAp?: TransformsList
-          }
-        }
-      } = req;
+      const feedTemplate = req.res?.locals?.feedTemplate as any;
+      const feedTemplateTransformsDcatAp = req.app.locals.feedTemplateTransformsDcatAp as TransformsList;
 
       if (!feedTemplate) {
         throw new DcatApError('DCAT-AP 2.0.1 feed template is not provided.', 400);
