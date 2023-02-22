@@ -15,7 +15,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
       compileDcatFeedEntry(datasetFromApi, dcatTemplate, {});
     } catch (error) {
       expect(error).toBeInstanceOf(DcatApError);
-      expect(error).toHaveProperty('statusCode', 400);
+      expect(error).toHaveProperty('statusCode', 500);
     }
   });
 

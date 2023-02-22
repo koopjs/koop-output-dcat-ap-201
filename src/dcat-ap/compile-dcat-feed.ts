@@ -22,7 +22,7 @@ export function compileDcatFeedEntry(
         removeUninterpolatedDistributions(_.flatten(dcatFeedItem['dcat:distribution'])),
     }, null, '\t'), 2);
   } catch (err) {
-    throw new DcatApError(err.message, 400);
+    throw new DcatApError(err.message, 500);
   }
 }
 
