@@ -42,10 +42,7 @@ function generateDcatItem(feedTemplate: DcatDatasetTemplate, feedTemplateTransfo
     feedTemplateTransforms
   );
 
-  return Object.assign(
-    {},
-    interpolatedFields
-  );
+  return interpolatedFields;
 }
 
 // HUBJS CANDIDATE
