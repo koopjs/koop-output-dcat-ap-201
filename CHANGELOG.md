@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2.0.0
+BREAKING CHANGES
+- Decouples this output plugin from the `hub-search` provider to better align with Koop JS patterns[#38](https://github.com/koopjs/koop-output-dcat-ap-201/pull/38)
+
 ## 1.9.1
 Fixed
 - Fixed missing modified property issue in datasets [#24](https://github.com/koopjs/koop-output-dcat-ap-201/pull/24)
