@@ -20,7 +20,8 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
       foaf: 'http://xmlns.com/foaf/0.1/',
       vcard: 'http://www.w3.org/2006/vcard/ns#',
       ftype: 'http://publications.europa.eu/resource/authority/file-type/',
-      lang: 'http://publications.europa.eu/resource/authority/language/'
+      lang: 'http://publications.europa.eu/resource/authority/language/',
+      skos: "http://www.w3.org/2004/02/skos/core#"
     });
     expect(feed['dcat:dataset']).toBeInstanceOf(Array);
     expect(feed['dcat:dataset'].length).toBe(1);
