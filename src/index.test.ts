@@ -107,7 +107,8 @@ describe('Output Plugin', () => {
           foaf: 'http://xmlns.com/foaf/0.1/',
           vcard: 'http://www.w3.org/2006/vcard/ns#',
           ftype: 'http://publications.europa.eu/resource/authority/file-type/',
-          lang: 'http://publications.europa.eu/resource/authority/language/'
+          lang: 'http://publications.europa.eu/resource/authority/language/',
+          skos: "http://www.w3.org/2004/02/skos/core#"
         });
         expect(dcatStream['dcat:dataset']).toBeInstanceOf(Array);
         expect(dcatStream['dcat:dataset'].length).toBe(1);
