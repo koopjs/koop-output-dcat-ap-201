@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2.0.1
+- Added `skos` context to define `dcat:theme` [#40](https://github.com/koopjs/koop-output-dcat-ap-201/pull/40)
+
 ## 2.0.0
 BREAKING CHANGES
 - Decouples this output plugin from the `hub-search` provider to better align with Koop JS patterns[#38](https://github.com/koopjs/koop-output-dcat-ap-201/pull/38)
