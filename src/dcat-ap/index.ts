@@ -10,7 +10,9 @@ const DEFAULT_CATALOG_HEADER = {
     vcard: 'http://www.w3.org/2006/vcard/ns#',
     ftype: 'http://publications.europa.eu/resource/authority/file-type/',
     lang: 'http://publications.europa.eu/resource/authority/language/',
-    skos: "http://www.w3.org/2004/02/skos/core#"
+    skos: "http://www.w3.org/2004/02/skos/core#",
+    access: "http://publications.europa.eu/resource/authority/access-right/",
+    xsd: "http://www.w3.org/2001/XMLSchema#"
   }
 };
 const FOOTER = '\n\t]\n}';
