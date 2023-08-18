@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2.0.2
+- Added `access` and `xsd` context for DCAT AP 2.1.1 upgrade [#40](https://github.com/koopjs/koop-output-dcat-ap-201/pull/41)
+
 ## 2.0.1
 - Added `skos` context to define `dcat:theme` [#40](https://github.com/koopjs/koop-output-dcat-ap-201/pull/40)
 

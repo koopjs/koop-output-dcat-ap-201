@@ -1,4 +1,4 @@
-# Koop Provider DCAT-AP 2.0.1
+# Koop Provider DCAT-AP 2.1.1
 
 [![TypeScript version][ts-badge]][typescript-4-3]
 [![Node.js version][nodejs-badge]][nodejs]
@@ -6,7 +6,7 @@
 [![Build Status - GitHub Actions][gha-badge]][gha-ci]
 ![Coverage](./coverage.svg)
 
-This is a Koop output plugin that transforms datasets from the ArcGIS Hub Search API into a DCAT-AP 2.0.1 feed encoded in RDF/JSON-LD. It currently only supports exporting a search catalog from an entire Hub Site.
+This is a Koop output plugin that transforms datasets from the ArcGIS Hub Search API into a DCAT-AP 2.1.1 feed encoded in RDF/JSON-LD. It currently only supports exporting a search catalog from an entire Hub Site.
 
 Here is an example feed:
 ```json
