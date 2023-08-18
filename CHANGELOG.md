@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2.1.0
+- Version bump to DCAT 2.1.1
+
 ## 2.0.2
 - Added `access` and `xsd` context for DCAT AP 2.1.1 upgrade [#40](https://github.com/koopjs/koop-output-dcat-ap-201/pull/41)
 

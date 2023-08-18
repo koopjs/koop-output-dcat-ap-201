@@ -65,7 +65,7 @@ describe('Output Plugin', () => {
     expect(plugin.constructor.version).toBeDefined();
     expect(plugin.constructor.routes).toEqual([
       {
-        path: '/dcat-ap/2.0.1',
+        path: '/dcat-ap/2.1.1',
         methods: ['get'],
         handler: 'serve',
       }
