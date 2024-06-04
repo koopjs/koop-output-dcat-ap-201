@@ -6,6 +6,7 @@ import * as mockSiteModel from './test-helpers/mock-site-model.json';
 import * as mockDataset from './test-helpers/mock-dataset.json';
 import { readableFromArray } from './test-helpers/stream-utils';
 import { DcatApError } from './dcat-ap/dcat-ap-error';
+import { PassThrough } from 'stream';
 
 describe('Output Plugin', () => {
   let mockFetchSite;
@@ -30,6 +31,13 @@ describe('Output Plugin', () => {
     app.get('/dcat', function (req, res, next) {
       req.app.locals.feedTemplateTransforms = feedTemplateTransforms;
       res.locals.feedTemplate = feedTemplate;
+      
+      app.use((err, _req, res, _next) => {
+        res.status(err.status || 500)
+        res.send({
+          error: err.message
+        })
+      })
       next();
     }, plugin.serve.bind(plugin));
 
@@ -130,6 +138,25 @@ describe('Output Plugin', () => {
       });
 
     // TODO test stream error
+  });
+
+  it('returns error if stream emits an error', async () => {
+    const mockReadable = new PassThrough();
+
+    plugin.model.pullStream.mockResolvedValue(mockReadable);
+    const mockError = new Error('stream error')
+
+    setTimeout(() => {
+      mockReadable.emit('error', mockError)
+    }, 200)
+    await request(app)
+      .get('/dcat')
+      .set('host', siteHostName)
+      .expect('Content-Type', /application\/json/)
+      .expect(500)
+      .expect((res) => {
+        expect(res.body).toEqual({ error: 'stream error' });
+      });
   });
 
   it('returns 400 when searchRequest returns 400', async () => {

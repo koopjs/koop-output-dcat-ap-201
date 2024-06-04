@@ -33,10 +33,12 @@ export = class OutputDcatAp201 {
       const { dcatStream } = getDataStreamDcatAp201(feedTemplate, feedTemplateTransformsDcatAp);
 
       const datasetStream = await this.getDatasetStream(req);
-
-      datasetStream
-        .pipe(dcatStream)
-        .pipe(res);
+      
+      datasetStream.on('error', (err) => {
+        if (req.next) {
+          req.next(err);
+        }
+      }).pipe(dcatStream).pipe(res);
 
     } catch (err) {
       res.status(err.statusCode).send(this.getErrorResponse(err));
