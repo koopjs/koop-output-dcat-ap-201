@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2.1.1
+- Handle stream error [#43](https://github.com/koopjs/koop-output-dcat-ap-201/pull/43)
+
 ## 2.1.0
 - Version bump to DCAT 2.1.1
 
