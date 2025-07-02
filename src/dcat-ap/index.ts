@@ -11,7 +11,7 @@ const FOOTER = '\n\t]\n}';
 export function getDataStreamDcatAp(
   feedTemplate: any,
   feedTemplateTransforms: TransformsList,
-  version: string = undefined,
+  version: string,
 ) {
   const { header: templateHeader, ...restFeedTemplate } = feedTemplate;
 
@@ -36,7 +36,7 @@ export function getDataStreamDcatAp(
 }
 
 function getStreamHeader(templateHeader, version: string): string {
-  if (version === undefined || version.startsWith('2.')) {
+  if (version.startsWith('2.')) {
     const feedHeader = JSON.stringify(
       { ...DEFAULT_CATALOG_HEADER_2X, ...templateHeader },
       null,

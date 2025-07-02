@@ -11,7 +11,7 @@ export = class OutputDcatAp201 {
   static version = version;
   static routes = [
     {
-      path: '/dcat-ap/:version?',
+      path: '/dcat-ap/:version',
       methods: ['get'],
       handler: 'serve',
     },

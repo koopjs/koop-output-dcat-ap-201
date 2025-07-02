@@ -13,26 +13,6 @@ async function generateDcatFeed(dataset, template, templateTransforms, version) 
 }
 
 describe('generating DCAT-AP 2.0.1 feed', () => {
-  it('formats catalog correctly with undefined version', async function () {
-    const { feed } = await generateDcatFeed([], {}, {}, undefined);
-
-    expect(feed['@context']).toBeDefined();
-    expect(feed['@context']).toStrictEqual({
-      dcat: 'http://www.w3.org/ns/dcat#',
-      dct: 'http://purl.org/dc/terms/',
-      foaf: 'http://xmlns.com/foaf/0.1/',
-      vcard: 'http://www.w3.org/2006/vcard/ns#',
-      ftype: 'http://publications.europa.eu/resource/authority/file-type/',
-      lang: 'http://publications.europa.eu/resource/authority/language/',
-      skos: 'http://www.w3.org/2004/02/skos/core#',
-      access: 'http://publications.europa.eu/resource/authority/access-right/',
-      xsd: 'http://www.w3.org/2001/XMLSchema#',
-    });
-    expect(feed['dcat:dataset']).toBeInstanceOf(Array);
-    expect(feed['dcat:dataset'].length).toBe(1);
-    expect(Array.isArray(feed['dcat:dataset'])).toBeTruthy();
-  });
-
   it('formats catalog correctly with version', async function () {
     const { feed } = await generateDcatFeed([], {}, {}, '2.0.1');
 
