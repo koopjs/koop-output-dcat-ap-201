@@ -1,38 +1,61 @@
 import { FeedFormatterStream } from './feed-formatter-stream';
 import { TransformsList } from 'adlib';
 import { compileDcatFeedEntry } from './compile-dcat-feed';
+import {
+  DEFAULT_CATALOG_HEADER_2X,
+  DEFAULT_CATALOG_HEADER_3X,
+} from './constants/headers';
 
-const DEFAULT_CATALOG_HEADER = {
-  '@context': {
-    dcat: 'http://www.w3.org/ns/dcat#',
-    dct: 'http://purl.org/dc/terms/',
-    foaf: 'http://xmlns.com/foaf/0.1/',
-    vcard: 'http://www.w3.org/2006/vcard/ns#',
-    ftype: 'http://publications.europa.eu/resource/authority/file-type/',
-    lang: 'http://publications.europa.eu/resource/authority/language/',
-    skos: "http://www.w3.org/2004/02/skos/core#",
-    access: "http://publications.europa.eu/resource/authority/access-right/",
-    xsd: "http://www.w3.org/2001/XMLSchema#"
-  }
-};
 const FOOTER = '\n\t]\n}';
 
-export function getDataStreamDcatAp201(feedTemplate: any, feedTemplateTransforms: TransformsList) {
+export function getDataStreamDcatAp(
+  feedTemplate: any,
+  feedTemplateTransforms: TransformsList,
+  version: string = undefined,
+) {
   const { header: templateHeader, ...restFeedTemplate } = feedTemplate;
 
   const streamFormatter = (chunk) => {
-    return compileDcatFeedEntry(chunk, restFeedTemplate, feedTemplateTransforms);
+    return compileDcatFeedEntry(
+      chunk,
+      restFeedTemplate,
+      feedTemplateTransforms,
+    );
   };
 
-  const streamHeader = getStreamHeader(templateHeader);
+  const streamHeader = getStreamHeader(templateHeader, version);
 
   return {
-    dcatStream: new FeedFormatterStream(streamHeader, FOOTER, ',\n', streamFormatter)
+    dcatStream: new FeedFormatterStream(
+      streamHeader,
+      FOOTER,
+      ',\n',
+      streamFormatter,
+    ),
   };
 }
 
-function getStreamHeader(templateHeader): string {
-  const feedHeader = JSON.stringify({ ...DEFAULT_CATALOG_HEADER, ...templateHeader }, null, '\t');
-
-  return `${feedHeader.substring(0, feedHeader.length - 2)},\n\t"dcat:dataset": [\n`;
+function getStreamHeader(templateHeader, version: string): string {
+  if (version === undefined || version.startsWith('2.')) {
+    const feedHeader = JSON.stringify(
+      { ...DEFAULT_CATALOG_HEADER_2X, ...templateHeader },
+      null,
+      '\t',
+    );
+    return `${feedHeader.substring(
+      0,
+      feedHeader.length - 2,
+    )},\n\t"dcat:dataset": [\n`;
+  } else if (version === '3.0.0') {
+    const feedHeader = JSON.stringify(
+      { ...DEFAULT_CATALOG_HEADER_3X, ...templateHeader },
+      null,
+      '\t',
+    );
+    return `${feedHeader.substring(
+      0,
+      feedHeader.length - 2,
+    )},\n\t"dcat:dataset": [\n`;
+  }
+  throw new Error('unsupported dcat ap version header');
 }
