@@ -41,5 +41,20 @@ export const DEFAULT_CATALOG_HEADER_3X = {
     spdx: 'http://spdx.org/rdf/terms#',
     vcard: 'http://www.w3.org/2006/vcard/ns#',
     xsd: 'http://www.w3.org/2001/XMLSchema#',
+    'adms:Identifier': {
+      '@id': 'adms:Identifier',
+      '@context': {
+        schemaAgency: 'http://www.w3.org/ns/adms#schemaAgency',
+        creator: {
+          '@id': 'dcterms:creator',
+          '@type': '@id',
+        },
+        issued: {
+          '@id': 'dcterms:issued',
+        },
+        version: 'http://purl.org/dc/terms/version',
+        notation: 'http://www.w3.org/2004/02/skos/core#notation',
+      },
+    },
   },
 };

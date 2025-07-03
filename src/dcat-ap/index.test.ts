@@ -4,6 +4,7 @@ import {
 } from '../test-helpers/stream-utils';
 import { getDataStreamDcatAp } from './';
 import * as datasetFromApi from '../test-helpers/mock-dataset.json';
+import { DEFAULT_CATALOG_HEADER_2X, DEFAULT_CATALOG_HEADER_3X } from './constants/headers';
 
 async function generateDcatFeed(dataset, template, templateTransforms, version) {
   const { dcatStream } = getDataStreamDcatAp(template, templateTransforms, version);
@@ -17,17 +18,7 @@ describe('generating DCAT-AP 2.0.1 feed', () => {
     const { feed } = await generateDcatFeed([], {}, {}, '2.0.1');
 
     expect(feed['@context']).toBeDefined();
-    expect(feed['@context']).toStrictEqual({
-      dcat: 'http://www.w3.org/ns/dcat#',
-      dct: 'http://purl.org/dc/terms/',
-      foaf: 'http://xmlns.com/foaf/0.1/',
-      vcard: 'http://www.w3.org/2006/vcard/ns#',
-      ftype: 'http://publications.europa.eu/resource/authority/file-type/',
-      lang: 'http://publications.europa.eu/resource/authority/language/',
-      skos: 'http://www.w3.org/2004/02/skos/core#',
-      access: 'http://publications.europa.eu/resource/authority/access-right/',
-      xsd: 'http://www.w3.org/2001/XMLSchema#',
-    });
+    expect(feed['@context']).toStrictEqual(DEFAULT_CATALOG_HEADER_2X['@context']);
     expect(feed['dcat:dataset']).toBeInstanceOf(Array);
     expect(feed['dcat:dataset'].length).toBe(1);
     expect(Array.isArray(feed['dcat:dataset'])).toBeTruthy();
@@ -147,35 +138,7 @@ describe('generating DCAT-AP 3.0.0 feed', () => {
     const { feed } = await generateDcatFeed([], {}, {}, '3.0.0');
 
     expect(feed['@context']).toBeDefined();
-    expect(feed['@context']).toStrictEqual({
-      '@version': 1.1,
-      '@protected': true,
-      adms: 'http://www.w3.org/ns/adms#',
-      cnt: 'http://www.w3.org/2011/content#',
-      dash: 'http://datashapes.org/dash#',
-      dcat: 'http://www.w3.org/ns/dcat#',
-      dcatap: 'http://data.europa.eu/r5r/',
-      'dcat-us': 'http://data.resources.gov/ontology/dcat-us#',
-      'dcat-us-shp': 'http://data.resources.gov/shapes/dcat-us#',
-      dcterms: 'http://purl.org/dc/terms/',
-      dqv: 'http://www.w3.org/ns/dqv#',
-      foaf: 'http://xmlns.com/foaf/0.1/',
-      gsp: 'http://www.opengis.net/ont/geosparql#',
-      locn: 'http://www.w3.org/ns/locn#',
-      odrs: 'http://schema.theodi.org/odrs#',
-      org: 'http://www.w3c.org/ns/org#',
-      owl: 'http://www.w3.org/2002/07/owl#',
-      prov: 'http://www.w3.org/ns/prov#',
-      rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-      rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
-      schema: 'http://schema.org/',
-      sh: 'http://www.w3.org/ns/shacl#',
-      skos: 'http://www.w3.org/2004/02/skos/core#',
-      'sdmx-attribute': 'http://purl.org/linked-data/sdmx/2009/attribute#',
-      spdx: 'http://spdx.org/rdf/terms#',
-      vcard: 'http://www.w3.org/2006/vcard/ns#',
-      xsd: 'http://www.w3.org/2001/XMLSchema#',
-    });
+    expect(feed['@context']).toStrictEqual(DEFAULT_CATALOG_HEADER_3X['@context']);
     expect(feed['dcat:dataset']).toBeInstanceOf(Array);
     expect(feed['dcat:dataset'].length).toBe(1);
     expect(Array.isArray(feed['dcat:dataset'])).toBeTruthy();
