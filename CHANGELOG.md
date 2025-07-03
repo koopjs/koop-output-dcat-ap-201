@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2.2.0
+- Added support for DCAT AP 3.0 [#67](https://github.com/koopjs/koop-output-dcat-us-11/pull/67)
+
 ## 2.1.1
 - Handle stream error [#43](https://github.com/koopjs/koop-output-dcat-ap-201/pull/43)
 
