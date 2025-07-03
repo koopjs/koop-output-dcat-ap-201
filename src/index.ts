@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import * as _ from 'lodash';
 
 import { version } from '../package.json';
-import { getDataStreamDcatAp201 } from './dcat-ap';
+import { getDataStreamDcatAp } from './dcat-ap';
 import { TransformsList } from 'adlib';
 import { DcatApError } from './dcat-ap/dcat-ap-error';
 
@@ -11,7 +11,7 @@ export = class OutputDcatAp201 {
   static version = version;
   static routes = [
     {
-      path: '/dcat-ap/2.1.1',
+      path: '/dcat-ap/:version',
       methods: ['get'],
       handler: 'serve',
     },
@@ -25,15 +25,16 @@ export = class OutputDcatAp201 {
     try {
       const feedTemplate = req.res?.locals?.feedTemplate as any;
       const feedTemplateTransformsDcatAp = req.app.locals.feedTemplateTransformsDcatAp as TransformsList;
+      const version = this.getVersion(_.get(req, 'path', ''));
 
       if (!feedTemplate) {
-        throw new DcatApError('DCAT-AP 2.0.1 feed template is not provided.', 400);
+        throw new DcatApError(`DCAT-AP ${version} feed template is not provided.`, 400);
       }
 
-      const { dcatStream } = getDataStreamDcatAp201(feedTemplate, feedTemplateTransformsDcatAp);
+      const { dcatStream } = getDataStreamDcatAp(feedTemplate, feedTemplateTransformsDcatAp, version);
 
       const datasetStream = await this.getDatasetStream(req);
-      
+
       datasetStream.on('error', (err) => {
         if (req.next) {
           req.next(err);
@@ -43,6 +44,11 @@ export = class OutputDcatAp201 {
     } catch (err) {
       res.status(err.statusCode).send(this.getErrorResponse(err));
     }
+  }
+
+  private getVersion(reqPath: string) {
+    const version = reqPath.substring(reqPath.lastIndexOf('/') + 1);
+    return ['2.0.1', '2.1.1', '3.0.0'].includes(version) ? version : '2.0.1';
   }
 
   private async getDatasetStream(req: Request) {
