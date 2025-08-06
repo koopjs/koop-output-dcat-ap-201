@@ -18,6 +18,7 @@ export const DEFAULT_CATALOG_HEADER_3X = {
     '@protected': true,
     adms: 'http://www.w3.org/ns/adms#',
     cnt: 'http://www.w3.org/2011/content#',
+    dct: 'http://purl.org/dc/terms/',
     dash: 'http://datashapes.org/dash#',
     dcat: 'http://www.w3.org/ns/dcat#',
     dcatap: 'http://data.europa.eu/r5r/',
