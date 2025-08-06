@@ -1,7 +1,10 @@
 # CHANGELOG.md
 
+## 2.3.0
+- Added `dct` context to DCAT AP 3.0.0 header [#68](https://github.com/koopjs/koop-output-dcat-ap-201/pull/45)
+
 ## 2.2.0
-- Added support for DCAT AP 3.0 [#67](https://github.com/koopjs/koop-output-dcat-us-11/pull/67)
+- Added support for DCAT AP 3.0 [#67](https://github.com/koopjs/koop-output-dcat-ap-201/pull/44)
 
 ## 2.1.1
 - Handle stream error [#43](https://github.com/koopjs/koop-output-dcat-ap-201/pull/43)
